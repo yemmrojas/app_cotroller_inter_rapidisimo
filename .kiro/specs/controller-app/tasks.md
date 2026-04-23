@@ -6,11 +6,28 @@ This implementation plan breaks down the Controller APP feature into discrete, i
 
 ## Tasks
 
+- [ ] 0. Project Governance and Infrastructure Setup
+  - [ ] 0.1 Configure Git & Documentation
+    - Create README.md with project specifications, technology stack, and execution guide
+    - Create CHANGELOG.md following the standard [FEATURE/FIX] - Description format
+    - Create .github/pull_request_template.md with mandatory checklist (Labels, Owner, Changelog, Tests, Standard Titles)
+    - Include sections: Business & Technical Description, Unit Tests Explanation, Mandatory Checklist
+    - _Technical Requirement: Git Configuration and Documentation_
+  
+  - [ ] 0.2 Configure CI/CD Pipeline (GitHub Actions)
+    - Create .github/workflows/android_ci.yml workflow
+    - Configure Ktlint for code style validation
+    - Configure unit test execution with minimum 80% coverage requirement
+    - Configure project build verification
+    - Add status badges to README.md
+    - _Technical Requirement: CI/CD Configuration_
+
 - [ ] 1. Set up project structure and dependencies
   - Configure Hilt dependency injection in the app module
   - Add required dependencies: Retrofit, Room, Coroutines, Flow, Navigation Compose, Kotlinx Serialization, Kotest
   - Create package structure: domain, data, presentation layers
   - Configure Kotlinx Serialization plugin
+  - Add Ktlint for code style enforcement
   - _Requirements: 12.1, 13.1, 13.2, 14.1_
 
 - [ ] 2. Implement Domain Layer - Core Models and Interfaces
@@ -26,6 +43,13 @@ This implementation plan breaks down the Controller APP feature into discrete, i
     - Create DataSyncRepository interface with Flow return types
     - Create LocalitiesRepository interface with Flow return types
     - _Requirements: 12.1, 14.2_
+  
+  - [ ] 2.2.1 Document interfaces with KDoc
+    - Document all repository interfaces explaining their business purpose
+    - Document all use case interfaces with input/output specifications
+    - Document API service interfaces with endpoint details
+    - Note: Implementation documentation only required for complex logic
+    - _Technical Requirement: Interface Documentation_
   
   - [ ] 2.3 Implement use cases
     - Create CheckVersionUseCase with Flow
@@ -52,7 +76,10 @@ This implementation plan breaks down the Controller APP feature into discrete, i
     - Implement network connectivity check
     - Implement error mapping (timeout, no connection, API errors)
     - Add logging for all errors
+    - Configure Kotlinx Serialization to be lenient for escaped characters (e.g., \n in Password field from Interrapidisimo API)
+    - Add OkHttp interceptor to handle JSON parsing edge cases
     - _Requirements: 9.1, 9.2, 9.3, 9.4_
+    - _Technical Note: API returns escaped characters in Password field that require lenient parsing_
   
   - [ ] 3.3 Create Room database
     - Define UserEntity with Room annotations
@@ -151,7 +178,11 @@ This implementation plan breaks down the Controller APP feature into discrete, i
   - Test HomeViewModel user data display
   - Test TablesViewModel table operations
   - Test LocalitiesViewModel localities loading
+  - **CRITICAL: Use provider methods pattern (e.g., providesSut(), providesRepositoryMock())**
+  - **DO NOT use @Before or global initialization in tests**
+  - **All dependencies must be injected via provider methods**
   - _Requirements: 15.3_
+  - _Technical Requirement: Provider Methods Testing Pattern_
 
 - [ ] 8. Implement Presentation Layer - UI Screens
   - [ ] 8.1 Create SplashScreen composable
@@ -259,7 +290,16 @@ This implementation plan breaks down the Controller APP feature into discrete, i
   - Test end-to-end authentication flow
   - Test navigation between screens
   - Test data synchronization flow
+  - **Use provider methods pattern for all test dependencies**
+  - **Avoid @Before setup methods**
   - _Requirements: 15.2_
+
+- [ ] 12.5 Update CHANGELOG.md for final version
+  - Ensure current project version matches CHANGELOG.md entry
+  - Verify all features and fixes are documented
+  - Add release date and version number
+  - Review format compliance: [FEATURE/FIX] - Description
+  - _Technical Requirement: Version Control and Changelog Maintenance_
 
 - [ ] 13. Final Checkpoint - Comprehensive Testing
   - Ensure all tests pass, ask the user if questions arise.
@@ -276,3 +316,37 @@ This implementation plan breaks down the Controller APP feature into discrete, i
 - Implementation follows Clean Architecture: Domain → Data → Presentation
 - Flow is used throughout for reactive data streams
 - All repository methods return Flow for consistency
+
+## Mandatory Team Standards
+
+### Testing Pattern
+- **ALWAYS use provider methods** (e.g., `providesSut()`, `providesRepositoryMock()`)
+- **NEVER use @Before or @Setup** annotations for test initialization
+- All test dependencies must be injected through provider methods
+- Example pattern from team standard:
+  ```kotlin
+  companion object {
+      @JvmStatic
+      fun providesTestScenarios() = listOf(/* scenarios */)
+  }
+  ```
+
+### Documentation Requirements
+- All interfaces MUST be documented with KDoc
+- Implementations only need documentation if logic is complex
+- Include business purpose in interface documentation
+
+### Version Control
+- CHANGELOG.md MUST be updated before every push
+- Format: `[FEATURE]` or `[FIX]` - Description
+- Pull requests MUST use the template with mandatory checklist
+
+### CI/CD Requirements
+- All code MUST pass Ktlint validation
+- Unit test coverage MUST be minimum 80%
+- Build MUST succeed before merge
+
+### JSON Parsing
+- Kotlinx Serialization configured as lenient for API edge cases
+- Interrapidisimo API returns escaped characters (e.g., `\n` in Password)
+- OkHttp interceptor handles special characters in responses
