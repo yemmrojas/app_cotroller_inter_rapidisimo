@@ -150,7 +150,10 @@ app/
 
 # Run tests with coverage report
 ./gradlew testDebugUnitTestCoverage
-# Coverage report: app/build/reports/coverage/test/debug/index.html
+# Coverage report: app/build/reports/jacoco/testDebugUnitTestCoverage/html/index.html
+
+# Verify coverage meets 80% minimum (will fail if below threshold)
+./gradlew verifyCoverage
 
 # Run specific test class
 ./gradlew test --tests "com.yei.dev.controlerinterrapidisimo.domain.usecases.CheckVersionUseCaseTest"
@@ -193,8 +196,9 @@ app/
 
 ### CI/CD Requirements
 - All code MUST pass Ktlint validation
-- Unit test coverage MUST be minimum 80%
+- Unit test coverage MUST be minimum 80% (enforced by CI)
 - Build MUST succeed before merge
+- Coverage verification will fail the build if threshold is not met
 
 ## API Configuration
 

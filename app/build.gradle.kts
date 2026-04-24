@@ -140,12 +140,40 @@ tasks.register("verifyCoverage") {
     dependsOn("testDebugUnitTestCoverage")
     
     doLast {
-        val reportFile = file("${project.buildDir}/reports/jacoco/testDebugUnitTestCoverage/html/index.html")
-        if (reportFile.exists()) {
-            println("Coverage report generated at: ${reportFile.absolutePath}")
-            println("Please ensure coverage meets the minimum 80% requirement")
+        val reportFile = file("${project.buildDir}/reports/jacoco/testDebugUnitTestCoverage/jacocoTestReport.xml")
+        if (!reportFile.exists()) {
+            throw GradleException("Coverage report not found. Please run tests first.")
+        }
+        
+        val report = reportFile.readText()
+        val coverageRegex = """<counter type="INSTRUCTION".*?missed="(\d+)".*?covered="(\d+)"""".toRegex()
+        val match = coverageRegex.find(report)
+        
+        if (match != null) {
+            val missed = match.groupValues[1].toInt()
+            val covered = match.groupValues[2].toInt()
+            val total = missed + covered
+            val coverage = if (total > 0) (covered.toDouble() / total.toDouble() * 100) else 0.0
+            
+            println("=".repeat(60))
+            println("Code Coverage Report")
+            println("=".repeat(60))
+            println("Instructions covered: $covered")
+            println("Instructions missed: $missed")
+            println("Total instructions: $total")
+            println("Coverage: %.2f%%".format(coverage))
+            println("Minimum required: 80.00%%")
+            println("=".repeat(60))
+            
+            if (coverage < 80.0) {
+                throw GradleException(
+                    "Code coverage is %.2f%%, which is below the minimum required 80%%".format(coverage)
+                )
+            } else {
+                println("✓ Coverage check PASSED")
+            }
         } else {
-            println("Coverage report not found. Tests may not have been executed.")
+            throw GradleException("Could not parse coverage report")
         }
     }
 }

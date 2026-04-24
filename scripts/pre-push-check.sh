@@ -54,15 +54,23 @@ fi
 echo ""
 
 echo -e "${YELLOW}4. Generating test coverage report...${NC}"
-if ./gradlew testDebugUnitTestCoverage; then
+if ./gradlew testDebugUnitTestCoverage 2>/dev/null; then
     echo -e "${GREEN}✓ Coverage report generated${NC}"
-    echo -e "${YELLOW}Please check coverage report at: app/build/reports/coverage/test/debug/index.html${NC}"
+    
+    echo -e "${YELLOW}5. Verifying 80% minimum coverage...${NC}"
+    if ./gradlew verifyCoverage 2>/dev/null; then
+        echo -e "${GREEN}✓ Coverage meets 80% minimum requirement${NC}"
+    else
+        echo -e "${RED}✗ Coverage is below 80% minimum${NC}"
+        echo -e "${YELLOW}Check report at: app/build/reports/jacoco/testDebugUnitTestCoverage/html/index.html${NC}"
+        exit 1
+    fi
 else
-    echo -e "${YELLOW}⚠ Coverage report generation skipped (tests may not exist yet)${NC}"
+    echo -e "${YELLOW}⚠ Coverage report generation skipped (no tests exist yet)${NC}"
 fi
 echo ""
 
-echo -e "${YELLOW}5. Running Android Lint...${NC}"
+echo -e "${YELLOW}6. Running Android Lint...${NC}"
 if ./gradlew lint; then
     echo -e "${GREEN}✓ Lint check passed${NC}"
 else
