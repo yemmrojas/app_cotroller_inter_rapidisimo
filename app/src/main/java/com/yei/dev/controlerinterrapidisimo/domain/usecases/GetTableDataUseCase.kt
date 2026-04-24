@@ -12,6 +12,8 @@ import javax.inject.Inject
  * returning it in a flexible format that can handle tables with varying schemas.
  * The data is returned as a list of maps where each map represents a row.
  *
+ * Values can be null to properly represent SQL NULL values for nullable columns.
+ *
  * @param dataSyncRepository Repository for data synchronization operations
  */
 class GetTableDataUseCase @Inject constructor(
@@ -24,6 +26,6 @@ class GetTableDataUseCase @Inject constructor(
      * @return Flow emitting Result with a list of row data maps,
      *         or an error if retrieval fails
      */
-    operator fun invoke(tableName: String): Flow<Result<List<Map<String, Any>>>> =
+    operator fun invoke(tableName: String): Flow<Result<List<Map<String, Any?>>>> =
         dataSyncRepository.getTableData(tableName)
 }

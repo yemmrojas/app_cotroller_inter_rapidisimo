@@ -27,6 +27,7 @@ The format follows: `[FEATURE]` or `[FIX]` - Description
 - [FIX] - Added strict coverage check task that parses XML report and validates percentage
 - [FIX] - Use generated JaCoCo XML path (testDebugUnitTestCoverage.xml) in coverage check task
 - [FIX] - Use report-level aggregate INSTRUCTION counter instead of first nested counter for accurate coverage calculation
+- [FIX] - Allow nullable values in table-data result contract (Map<String, Any?>) to properly represent SQL NULL
 
 ---
 

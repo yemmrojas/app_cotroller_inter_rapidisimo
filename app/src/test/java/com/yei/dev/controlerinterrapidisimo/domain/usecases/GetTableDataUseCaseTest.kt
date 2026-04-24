@@ -75,6 +75,14 @@ class GetTableDataUseCaseTest {
                 tableName = "logs",
                 expectedData = emptyList(),
             ),
+            SuccessScenario(
+                description = "Table with nullable columns (SQL NULL values)",
+                tableName = "profiles",
+                expectedData = listOf(
+                    mapOf("id" to 1, "name" to "Alice", "bio" to null, "avatar" to "avatar1.png"),
+                    mapOf("id" to 2, "name" to "Bob", "bio" to "Developer", "avatar" to null),
+                ),
+            ),
         )
 
         fun providesErrorScenarios() = listOf(
@@ -96,7 +104,7 @@ class GetTableDataUseCaseTest {
             GetTableDataUseCase(dataSyncRepository = dataSyncRepository)
 
         private fun providesDataSyncRepository(
-            result: Result<List<Map<String, Any>>>,
+            result: Result<List<Map<String, Any?>>>,
         ): DataSyncRepository {
             return mockk<DataSyncRepository> {
                 every { getTableData(any()) } returns flowOf(result)
@@ -107,7 +115,7 @@ class GetTableDataUseCaseTest {
     data class SuccessScenario(
         val description: String,
         val tableName: String,
-        val expectedData: List<Map<String, Any>>,
+        val expectedData: List<Map<String, Any?>>,
     ) {
         override fun toString(): String = description
     }

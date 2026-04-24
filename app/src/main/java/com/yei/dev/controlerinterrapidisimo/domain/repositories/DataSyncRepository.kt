@@ -47,9 +47,11 @@ interface DataSyncRepository {
      * with column names as keys and column values as values. This flexible
      * structure handles tables with varying schemas.
      *
+     * Values can be null to properly represent SQL NULL values for nullable columns.
+     *
      * @param tableName The name of the table to query
      * @return Flow emitting Result with a list of row data maps on success,
      *         or an error if retrieval fails
      */
-    fun getTableData(tableName: String): Flow<Result<List<Map<String, Any>>>>
+    fun getTableData(tableName: String): Flow<Result<List<Map<String, Any?>>>>
 }
