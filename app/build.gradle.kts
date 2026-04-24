@@ -196,34 +196,43 @@ tasks.register("verifyCoverage") {
         }
         
         val report = reportFile.readText()
-        val coverageRegex = """<counter type="INSTRUCTION".*?missed="(\d+)".*?covered="(\d+)"""".toRegex()
-        val match = coverageRegex.find(report)
         
-        if (match != null) {
-            val missed = match.groupValues[1].toInt()
-            val covered = match.groupValues[2].toInt()
-            val total = missed + covered
-            val coverage = if (total > 0) (covered.toDouble() / total.toDouble() * 100) else 0.0
-            
-            println("=".repeat(60))
-            println("Code Coverage Report")
-            println("=".repeat(60))
-            println("Instructions covered: $covered")
-            println("Instructions missed: $missed")
-            println("Total instructions: $total")
-            println("Coverage: %.2f%%".format(coverage))
-            println("Minimum required: 80.00%%")
-            println("=".repeat(60))
-            
-            if (coverage < 80.0) {
-                throw GradleException(
-                    "Code coverage is %.2f%%, which is below the minimum required 80%%".format(coverage)
-                )
-            } else {
-                println("✓ Coverage check PASSED")
-            }
+        // Parse XML to find the report-level counter (not nested method/class counters)
+        // The report-level counter is the last INSTRUCTION counter before </report>
+        val reportCounterRegex = """<report[^>]*>.*<counter type="INSTRUCTION"[^>]*missed="(\d+)"[^>]*covered="(\d+)"[^>]*/>.*</report>""".toRegex(RegexOption.DOT_MATCHES_ALL)
+        val allCountersRegex = """<counter type="INSTRUCTION"[^>]*missed="(\d+)"[^>]*covered="(\d+)"[^>]*/?>""".toRegex()
+        
+        // Find all INSTRUCTION counters
+        val allMatches = allCountersRegex.findAll(report).toList()
+        
+        if (allMatches.isEmpty()) {
+            throw GradleException("Could not find any INSTRUCTION counters in coverage report")
+        }
+        
+        // The last INSTRUCTION counter in the XML is the report-level aggregate
+        val match = allMatches.last()
+        
+        val missed = match.groupValues[1].toInt()
+        val covered = match.groupValues[2].toInt()
+        val total = missed + covered
+        val coverage = if (total > 0) (covered.toDouble() / total.toDouble() * 100) else 0.0
+        
+        println("=".repeat(60))
+        println("Code Coverage Report")
+        println("=".repeat(60))
+        println("Instructions covered: $covered")
+        println("Instructions missed: $missed")
+        println("Total instructions: $total")
+        println("Coverage: %.2f%%".format(coverage))
+        println("Minimum required: 80.00%%")
+        println("=".repeat(60))
+        
+        if (coverage < 80.0) {
+            throw GradleException(
+                "Code coverage is %.2f%%, which is below the minimum required 80%%".format(coverage)
+            )
         } else {
-            throw GradleException("Could not parse coverage report")
+            println("✓ Coverage check PASSED")
         }
     }
 }

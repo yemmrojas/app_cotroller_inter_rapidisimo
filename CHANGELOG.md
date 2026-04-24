@@ -26,6 +26,7 @@ The format follows: `[FEATURE]` or `[FIX]` - Description
 - [FIX] - Coverage verification now fails build if threshold is not met
 - [FIX] - Added strict coverage check task that parses XML report and validates percentage
 - [FIX] - Use generated JaCoCo XML path (testDebugUnitTestCoverage.xml) in coverage check task
+- [FIX] - Use report-level aggregate INSTRUCTION counter instead of first nested counter for accurate coverage calculation
 
 ---
 
