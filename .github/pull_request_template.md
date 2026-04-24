@@ -1,5 +1,12 @@
 # Pull Request
 
+## PR Metadata
+
+**Type**: <!-- feature | bug | refactor | docs | test | performance | security | ui | config -->  
+**Priority**: <!-- high | medium | low | urgent -->  
+**Architecture Layer**: <!-- domain | data | presentation | di -->  
+**Size**: <!-- XS | S | M | L | XL -->
+
 ## Business Description
 
 <!-- Describe the business value and user impact of this change -->
