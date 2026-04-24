@@ -1,0 +1,19 @@
+# Ktlint configuration for Controller APP
+
+# Disabled rules
+disabled_rules=no-wildcard-imports,import-ordering
+
+# Android specific rules
+android=true
+
+# Experimental rules
+experimental=true
+
+# Max line length
+max_line_length=120
+
+# Indent size
+indent_size=4
+
+# Insert final newline
+insert_final_newline=true

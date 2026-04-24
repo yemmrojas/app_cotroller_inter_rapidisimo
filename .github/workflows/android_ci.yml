@@ -1,0 +1,199 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Run Ktlint check
+      run: ./gradlew ktlintCheck
+      continue-on-error: false
+      
+    - name: Build with Gradle
+      run: ./gradlew build --stacktrace
+      
+    - name: Run unit tests
+      run: ./gradlew test --stacktrace
+      
+    - name: Generate test coverage report
+      run: ./gradlew testDebugUnitTestCoverage
+      
+    - name: Verify test coverage (80% minimum)
+      run: ./gradlew verifyCoverage
+      
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: |
+          app/build/reports/tests/
+          app/build/test-results/
+        retention-days: 30
+        
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-reports
+        path: |
+          app/build/reports/coverage/
+        retention-days: 30
+        
+    - name: Comment test results on PR
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always() && github.event_name == 'pull_request'
+      with:
+        files: |
+          app/build/test-results/**/*.xml
+        check_name: Unit Test Results
+        comment_mode: always
+        
+    - name: Build debug APK
+      run: ./gradlew assembleDebug
+      
+    - name: Upload debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug
+        path: app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 7
+
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Run Android Lint
+      run: ./gradlew lint
+      
+    - name: Upload lint results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: lint-results
+        path: app/build/reports/lint-results*.html
+        retention-days: 30
+
+  ktlint:
+    name: Code Style Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Run Ktlint
+      run: ./gradlew ktlintCheck
+      
+    - name: Upload Ktlint results
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: ktlint-report
+        path: app/build/reports/ktlint/
+        retention-days: 30
+        
+    - name: Annotate code with Ktlint results
+      if: failure()
+      run: |
+        echo "Ktlint found style violations. Run './gradlew ktlintFormat' to auto-fix."
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run dependency vulnerability scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+        
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  status-check:
+    name: CI Status Check
+    runs-on: ubuntu-latest
+    needs: [build, lint, ktlint]
+    if: always()
+    
+    steps:
+    - name: Check build status
+      run: |
+        if [ "${{ needs.build.result }}" != "success" ]; then
+          echo "Build job failed"
+          exit 1
+        fi
+        if [ "${{ needs.lint.result }}" != "success" ]; then
+          echo "Lint job failed"
+          exit 1
+        fi
+        if [ "${{ needs.ktlint.result }}" != "success" ]; then
+          echo "Ktlint job failed"
+          exit 1
+        fi
+        echo "All CI checks passed!"
