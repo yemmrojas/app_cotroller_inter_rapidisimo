@@ -9,7 +9,6 @@ import com.yei.dev.controlerinterrapidisimo.domain.models.UserSession
 class UserEntityToDomainConverter : Converter<UserEntity, UserSession> {
     override fun convert(input: UserEntity): UserSession = UserSession(
         username = input.username,
-        identification = input.identification,
         name = input.name
     )
 }

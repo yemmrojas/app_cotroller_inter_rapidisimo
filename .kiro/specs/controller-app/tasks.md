@@ -96,7 +96,7 @@ This implementation plan breaks down the Controller APP feature into discrete, i
     - Implement data mappers (Entity ↔ Domain)
     - _Requirements: 12.3, 14.2_
 
-- [ ]* 3.5 Write property test for authentication round-trip
+- [x] 3.5 Write property test for authentication round-trip
   - **Property 3: Authentication and Session Round-Trip**
   - **Validates: Requirements 2.3, 2.5, 4.1, 4.3, 11.1**
 

@@ -10,7 +10,6 @@ class UserSessionToEntityConverter : Converter<UserSession, UserEntity> {
     override fun convert(input: UserSession): UserEntity = UserEntity(
         id = 1,
         username = input.username,
-        identification = input.identification,
         name = input.name
     )
 }

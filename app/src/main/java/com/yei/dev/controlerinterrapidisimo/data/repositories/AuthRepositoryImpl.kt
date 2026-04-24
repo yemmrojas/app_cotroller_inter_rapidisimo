@@ -28,13 +28,13 @@ class AuthRepositoryImpl @Inject constructor(
     private val networkHandler: NetworkHandler,
     private val authResponseConverter: Converter<AuthResponseDto, AuthResponse>,
     private val userEntityToDomainConverter: Converter<UserEntity, UserSession>,
-    private val userSessionToEntityConverter: Converter<UserSession, UserEntity>
+    private val userSessionToEntityConverter: Converter<UserSession, UserEntity>,
 ) : AuthRepository {
 
     override fun login(
         username: String,
         password: String,
-        mac: String
+        mac: String,
     ): Flow<Result<UserSession>> = flow {
         // Validate input
         if (username.isBlank() || password.isBlank()) {
@@ -42,9 +42,9 @@ class AuthRepositoryImpl @Inject constructor(
                 Result.Error(
                     AppError.ValidationError(
                         field = FIELD_CREDENTIALS,
-                        message = MESSAGE_EMPTY_CREDENTIALS
-                    )
-                )
+                        message = MESSAGE_EMPTY_CREDENTIALS,
+                    ),
+                ),
             )
             return@flow
         }
@@ -65,8 +65,8 @@ class AuthRepositoryImpl @Inject constructor(
                     nomApplication = APP_NAME,
                     password = password,
                     path = EMPTY_PATH,
-                    user = username
-                )
+                    user = username,
+                ),
             )
         }
 
@@ -77,16 +77,15 @@ class AuthRepositoryImpl @Inject constructor(
 
                 // Validate user session data
                 if (userSession.username.isBlank() ||
-                    userSession.identification.isBlank() ||
                     userSession.name.isBlank()
                 ) {
                     emit(
                         Result.Error(
                             AppError.ValidationError(
                                 field = FIELD_USER,
-                                message = MESSAGE_EMPTY_USER_FIELDS
-                            )
-                        )
+                                message = MESSAGE_EMPTY_USER_FIELDS,
+                            ),
+                        ),
                     )
                     return@flow
                 }
@@ -100,12 +99,13 @@ class AuthRepositoryImpl @Inject constructor(
                         Result.Error(
                             AppError.DatabaseError(
                                 message = MESSAGE_FAILED_SAVE_SESSION,
-                                cause = e
-                            )
-                        )
+                                cause = e,
+                            ),
+                        ),
                     )
                 }
             }
+
             is Result.Error -> emit(authResult)
         }
     }
@@ -120,9 +120,9 @@ class AuthRepositoryImpl @Inject constructor(
                 Result.Error(
                     AppError.DatabaseError(
                         message = MESSAGE_FAILED_RETRIEVE_SESSION,
-                        cause = e
-                    )
-                )
+                        cause = e,
+                    ),
+                ),
             )
         }
     }
@@ -136,27 +136,27 @@ class AuthRepositoryImpl @Inject constructor(
                 Result.Error(
                     AppError.DatabaseError(
                         message = MESSAGE_FAILED_CLEAR_SESSION,
-                        cause = e
-                    )
-                )
+                        cause = e,
+                    ),
+                ),
             )
         }
     }
 
-    companion object {
-        private const val FIELD_CREDENTIALS = "credentials"
-        private const val FIELD_USER = "user"
-        private const val MESSAGE_EMPTY_CREDENTIALS = "Username and password cannot be empty"
-        private const val MESSAGE_EMPTY_USER_FIELDS = "All user fields must be non-empty"
-        private const val MESSAGE_FAILED_SAVE_SESSION = "Failed to save user session"
-        private const val MESSAGE_FAILED_RETRIEVE_SESSION = "Failed to retrieve user session"
-        private const val MESSAGE_FAILED_CLEAR_SESSION = "Failed to clear user session"
-        private const val HEADER_ACCEPT_JSON = "application/json"
-        private const val HEADER_CONTENT_TYPE_JSON = "application/json"
-        private const val DEFAULT_ID_USUARIO = "0"
-        private const val DEFAULT_ID_CENTRO_SERVICIO = "0"
-        private const val DEFAULT_ID_APLICATIVO_ORIGEN = "1"
-        private const val APP_NAME = "ControllerApp"
-        private const val EMPTY_PATH = ""
+    internal companion object {
+        const val FIELD_CREDENTIALS = "credentials"
+        const val FIELD_USER = "user"
+        const val MESSAGE_EMPTY_CREDENTIALS = "Username and password cannot be empty"
+        const val MESSAGE_EMPTY_USER_FIELDS = "All user fields must be non-empty"
+        const val MESSAGE_FAILED_SAVE_SESSION = "Failed to save user session"
+        const val MESSAGE_FAILED_RETRIEVE_SESSION = "Failed to retrieve user session"
+        const val MESSAGE_FAILED_CLEAR_SESSION = "Failed to clear user session"
+        const val HEADER_ACCEPT_JSON = "application/json"
+        const val HEADER_CONTENT_TYPE_JSON = "application/json"
+        const val DEFAULT_ID_USUARIO = "0"
+        const val DEFAULT_ID_CENTRO_SERVICIO = "0"
+        const val DEFAULT_ID_APLICATIVO_ORIGEN = "1"
+        const val APP_NAME = "ControllerApp"
+        const val EMPTY_PATH = ""
     }
 }
