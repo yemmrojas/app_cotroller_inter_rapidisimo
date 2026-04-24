@@ -74,7 +74,9 @@ echo -e "${YELLOW}6. Running Android Lint...${NC}"
 if ./gradlew lint; then
     echo -e "${GREEN}✓ Lint check passed${NC}"
 else
-    echo -e "${YELLOW}⚠ Lint found issues. Check report at: app/build/reports/lint-results.html${NC}"
+    echo -e "${RED}✗ Lint found issues. Please fix them before pushing.${NC}"
+    echo -e "${YELLOW}Check report at: app/build/reports/lint-results.html${NC}"
+    exit 1
 fi
 echo ""
 
