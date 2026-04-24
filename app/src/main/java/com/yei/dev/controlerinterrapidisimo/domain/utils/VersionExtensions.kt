@@ -3,19 +3,14 @@ package com.yei.dev.controlerinterrapidisimo.domain.utils
 import com.yei.dev.controlerinterrapidisimo.domain.models.VersionComparisonStatus
 
 /**
- * Compares this version string with a remote version using semantic versioning.
+ * Compares two version strings using semantic versioning.
  *
+ * @param localVersion The local version string (e.g., "1.2.3")
  * @param remoteVersion The remote version string to compare against (e.g., "1.3.0")
  * @return VersionComparisonStatus indicating the comparison result
- *
- * Example:
- * ```
- * val status = "1.2.3".compareVersion("1.3.0")
- * // Returns VersionComparisonStatus.UPDATE_NEEDED
- * ```
  */
-fun String.compareVersion(remoteVersion: String): VersionComparisonStatus {
-    val localParts = this.split(".").mapNotNull { it.toIntOrNull() }
+fun compareVersions(localVersion: String, remoteVersion: String): VersionComparisonStatus {
+    val localParts = localVersion.split(".").mapNotNull { it.toIntOrNull() }
     val remoteParts = remoteVersion.split(".").mapNotNull { it.toIntOrNull() }
 
     val maxLength = maxOf(localParts.size, remoteParts.size)
@@ -31,4 +26,20 @@ fun String.compareVersion(remoteVersion: String): VersionComparisonStatus {
     }
 
     return VersionComparisonStatus.UP_TO_DATE
+}
+
+/**
+ * Compares this version string with a remote version using semantic versioning.
+ *
+ * @param remoteVersion The remote version string to compare against (e.g., "1.3.0")
+ * @return VersionComparisonStatus indicating the comparison result
+ *
+ * Example:
+ * ```
+ * val status = "1.2.3".compareVersion("1.3.0")
+ * // Returns VersionComparisonStatus.UPDATE_NEEDED
+ * ```
+ */
+fun String.compareVersion(remoteVersion: String): VersionComparisonStatus {
+    return compareVersions(this, remoteVersion)
 }
