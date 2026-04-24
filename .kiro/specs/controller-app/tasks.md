@@ -124,15 +124,15 @@ This implementation plan breaks down the Controller APP feature into discrete, i
     - Annotate Application class with @HiltAndroidApp
     - _Requirements: 13.1_
 
-- [ ] 5. Checkpoint - Verify domain and data layers
+- [x] 5. Checkpoint - Verify domain and data layers
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Implement Presentation Layer - Navigation
-  - [ ] 6.1 Define navigation routes
+- [x] 6. Implement Presentation Layer - Navigation
+  - [x] 6.1 Define navigation routes
     - Create serializable route objects (SplashRoute, LoginRoute, HomeRoute, TablesRoute, TableDetailRoute, LocalitiesRoute)
     - _Requirements: 5.2, 5.3_
   
-  - [ ] 6.2 Create navigation graph
+  - [x] 6.2 Create navigation graph
     - Implement AppNavigation composable with NavHost
     - Configure navigation destinations and transitions
     - _Requirements: 5.1, 5.4_
