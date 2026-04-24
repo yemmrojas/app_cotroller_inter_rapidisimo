@@ -1,6 +1,6 @@
 [versions]
 agp = "8.13.2"
-kotlin = "2.0.21"
+kotlin = "2.1.0"
 coreKtx = "1.18.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -27,17 +27,20 @@ room = "2.8.4"
 coroutines = "1.10.2"
 
 # Navigation
-androidxNavigation3Version = "3.0.0-alpha08"
+androidxNavigation3Version = "2.9.8"
 
 # Kotest
 kotest = "6.1.11"
+
+# MockK
+mockk = "1.14.9"
 
 # Lifecycle
 lifecycleViewModelCompose = "2.10.0"
 lifecycleRuntimeCompose = "2.10.0"
 
 # KSP
-ksp = "2.0.21-1.0.28"
+ksp = "2.1.0-1.0.29"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -92,6 +95,10 @@ lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-ru
 kotest-runner-junit5 = { group = "io.kotest", name = "kotest-runner-junit5", version.ref = "kotest" }
 kotest-assertions-core = { group = "io.kotest", name = "kotest-assertions-core", version.ref = "kotest" }
 kotest-property = { group = "io.kotest", name = "kotest-property", version.ref = "kotest" }
+
+# MockK
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+mockk-android = { group = "io.mockk", name = "mockk-android", version.ref = "mockk" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
