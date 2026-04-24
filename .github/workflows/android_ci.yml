@@ -26,7 +26,7 @@ jobs:
       run: chmod +x gradlew
       
     - name: Cache Gradle packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.gradle/caches
@@ -52,7 +52,7 @@ jobs:
       run: ./gradlew verifyCoverage
       
     - name: Upload test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results
@@ -62,7 +62,7 @@ jobs:
         retention-days: 30
         
     - name: Upload coverage reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: coverage-reports
@@ -83,7 +83,7 @@ jobs:
       run: ./gradlew assembleDebug
       
     - name: Upload debug APK
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: app-debug
         path: app/build/outputs/apk/debug/app-debug.apk
@@ -111,7 +111,7 @@ jobs:
       run: ./gradlew lint
       
     - name: Upload lint results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: lint-results
@@ -140,7 +140,7 @@ jobs:
       run: ./gradlew ktlintCheck
       
     - name: Upload Ktlint results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: ktlint-report
