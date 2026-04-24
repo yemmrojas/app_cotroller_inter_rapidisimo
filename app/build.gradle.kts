@@ -190,9 +190,9 @@ tasks.register("verifyCoverage") {
     dependsOn("testDebugUnitTestCoverage")
     
     doLast {
-        val reportFile = file("${project.buildDir}/reports/jacoco/testDebugUnitTestCoverage/jacocoTestReport.xml")
+        val reportFile = file("${project.buildDir}/reports/jacoco/testDebugUnitTestCoverage/testDebugUnitTestCoverage.xml")
         if (!reportFile.exists()) {
-            throw GradleException("Coverage report not found. Please run tests first.")
+            throw GradleException("Coverage report not found at: ${reportFile.absolutePath}. Please run tests first.")
         }
         
         val report = reportFile.readText()

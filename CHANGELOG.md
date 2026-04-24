@@ -25,6 +25,7 @@ The format follows: `[FEATURE]` or `[FIX]` - Description
 - [FIX] - Enforce 80% minimum code coverage requirement in CI/CD pipeline
 - [FIX] - Coverage verification now fails build if threshold is not met
 - [FIX] - Added strict coverage check task that parses XML report and validates percentage
+- [FIX] - Use generated JaCoCo XML path (testDebugUnitTestCoverage.xml) in coverage check task
 
 ---
 
