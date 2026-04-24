@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+# Required permissions for the workflow
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 jobs:
   build:
     name: Build and Test
@@ -43,7 +49,7 @@ jobs:
       run: ./gradlew build --stacktrace
       
     - name: Run unit tests
-      run: ./gradlew test --stacktrace
+      run: ./gradlew testDebugUnitTest --stacktrace
       
     - name: Generate test coverage report
       run: ./gradlew testDebugUnitTestCoverage
@@ -60,6 +66,7 @@ jobs:
           app/build/reports/tests/
           app/build/test-results/
         retention-days: 30
+        if-no-files-found: warn
         
     - name: Upload coverage reports
       uses: actions/upload-artifact@v4
@@ -67,15 +74,16 @@ jobs:
       with:
         name: coverage-reports
         path: |
-          app/build/reports/coverage/
+          app/build/reports/jacoco/
         retention-days: 30
+        if-no-files-found: warn
         
     - name: Comment test results on PR
       uses: EnricoMi/publish-unit-test-result-action@v2
       if: always() && github.event_name == 'pull_request'
       with:
         files: |
-          app/build/test-results/**/*.xml
+          app/build/test-results/testDebugUnitTest/**/*.xml
         check_name: Unit Test Results
         comment_mode: always
         

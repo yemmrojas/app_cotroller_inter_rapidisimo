@@ -13,11 +13,25 @@ The format follows: `[FEATURE]` or `[FIX]` - Description
 - [FEATURE] - Pull request template with mandatory checklist
 - [FEATURE] - GitHub Actions CI/CD pipeline with Ktlint and test coverage validation
 - [FEATURE] - Gradle wrapper and root build files for CI/CD execution
+- [FEATURE] - Hilt dependency injection configuration in app module
+- [FEATURE] - Retrofit, Room, Coroutines, Flow, Navigation Compose dependencies
+- [FEATURE] - Kotlinx Serialization plugin and dependencies
+- [FEATURE] - Kotest for property-based testing
+- [FEATURE] - Clean Architecture package structure (domain, data, presentation layers)
+- [FEATURE] - ControllerApplication class with @HiltAndroidApp annotation
+- [FEATURE] - KSP (Kotlin Symbol Processing) for annotation processing
 
 ### Fixed
 - [FIX] - Enforce 80% minimum code coverage requirement in CI/CD pipeline
 - [FIX] - Coverage verification now fails build if threshold is not met
 - [FIX] - Added strict coverage check task that parses XML report and validates percentage
+- [FIX] - Use generated JaCoCo XML path (testDebugUnitTestCoverage.xml) in coverage check task
+- [FIX] - Use report-level aggregate INSTRUCTION counter instead of first nested counter for accurate coverage calculation
+- [FIX] - Allow nullable values in table-data result contract (Map<String, Any?>) to properly represent SQL NULL
+- [FIX] - Add required permissions (checks: write, pull-requests: write) to GitHub Actions workflow for test result publishing
+- [FIX] - Fix Ktlint violations in ExampleInstrumentedTest (import ordering, wildcard imports, missing newline)
+- [FIX] - Use testDebugUnitTest instead of test command to properly execute Android unit tests in CI
+- [FIX] - Update test results path to testDebugUnitTest for artifact uploads and test result publishing
 
 ---
 

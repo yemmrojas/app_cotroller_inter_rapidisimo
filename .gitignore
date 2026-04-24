@@ -1,0 +1,47 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Test and Coverage Reports
+/app/build/reports/
+/app/build/test-results/
+*.exec
+*.log
+
+# Ktlint
+.ktlint.gradle.kts
+
+# Android Studio
+.idea/
+*.iws
+/out/
+
+# Gradle
+.gradle/
+build/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Misc
+*.apk
+*.ap_
+*.dex
+*.class
+bin/
+gen/
