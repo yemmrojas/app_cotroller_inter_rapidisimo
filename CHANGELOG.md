@@ -29,6 +29,7 @@ The format follows: `[FEATURE]` or `[FIX]` - Description
 - [FIX] - Use report-level aggregate INSTRUCTION counter instead of first nested counter for accurate coverage calculation
 - [FIX] - Allow nullable values in table-data result contract (Map<String, Any?>) to properly represent SQL NULL
 - [FIX] - Add required permissions (checks: write, pull-requests: write) to GitHub Actions workflow for test result publishing
+- [FIX] - Fix Ktlint violations in ExampleInstrumentedTest (import ordering, wildcard imports, missing newline)
 
 ---
 
