@@ -30,6 +30,8 @@ The format follows: `[FEATURE]` or `[FIX]` - Description
 - [FIX] - Allow nullable values in table-data result contract (Map<String, Any?>) to properly represent SQL NULL
 - [FIX] - Add required permissions (checks: write, pull-requests: write) to GitHub Actions workflow for test result publishing
 - [FIX] - Fix Ktlint violations in ExampleInstrumentedTest (import ordering, wildcard imports, missing newline)
+- [FIX] - Use testDebugUnitTest instead of test command to properly execute Android unit tests in CI
+- [FIX] - Update test results path to testDebugUnitTest for artifact uploads and test result publishing
 
 ---
 
