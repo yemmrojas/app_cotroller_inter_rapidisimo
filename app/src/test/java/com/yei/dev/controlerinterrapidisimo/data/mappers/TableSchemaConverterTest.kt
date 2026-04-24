@@ -2,6 +2,7 @@ package com.yei.dev.controlerinterrapidisimo.data.mappers
 
 import com.yei.dev.controlerinterrapidisimo.data.remote.dto.ColumnDefinitionDto
 import com.yei.dev.controlerinterrapidisimo.data.remote.dto.TableSchemaDto
+import com.yei.dev.controlerinterrapidisimo.domain.models.ColumnDefinition
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.boolean
@@ -9,6 +10,8 @@ import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -27,7 +30,7 @@ class TableSchemaConverterTest {
             providesTableSchemaDtoScenarios(),
         ) { dto ->
             // Given
-            val sut = providesSut()
+            val sut = providesSut(providesColumnDefinitionConverter())
 
             // When
             val result = sut.convert(dto)
@@ -63,7 +66,7 @@ class TableSchemaConverterTest {
             providesTableSchemaDtoListScenarios(),
         ) { dtoList ->
             // Given
-            val sut = providesSut()
+            val sut = providesSut(providesColumnDefinitionConverter())
 
             // When
             val result = sut.convertList(dtoList)
@@ -86,7 +89,7 @@ class TableSchemaConverterTest {
     @Test
     fun `convert with empty columns list should return schema with empty columns`() {
         // Given
-        val sut = providesSut()
+        val sut = providesSut(providesColumnDefinitionConverter())
         val dto = TableSchemaDto(
             tableName = "empty_table",
             columns = emptyList(),
@@ -107,7 +110,7 @@ class TableSchemaConverterTest {
     @Test
     fun `convertList with empty list should return empty list`() {
         // Given
-        val sut = providesSut()
+        val sut = providesSut(providesColumnDefinitionConverter())
 
         // When
         val result = sut.convertList(emptyList())
@@ -158,8 +161,32 @@ class TableSchemaConverterTest {
         /**
          * Provides the system under test (TableSchemaConverter).
          */
-        private fun providesSut(): TableSchemaConverter {
-            return TableSchemaConverter()
-        }
+        private fun providesSut(converter: Converter<ColumnDefinitionDto, ColumnDefinition>): TableSchemaConverter =
+            TableSchemaConverter(converter)
+
+
+        private fun providesColumnDefinitionConverter() =
+            mockk<Converter<ColumnDefinitionDto, ColumnDefinition>>().apply {
+                every { convert(any()) } answers {
+                    val input = firstArg<ColumnDefinitionDto>()
+                    ColumnDefinition(
+                        name = input.name,
+                        type = input.type,
+                        nullable = input.nullable,
+                        primaryKey = input.primaryKey,
+                    )
+                }
+                every { convertList(any()) } answers {
+                    val inputList = firstArg<List<ColumnDefinitionDto>>()
+                    inputList.map { input ->
+                        ColumnDefinition(
+                            name = input.name,
+                            type = input.type,
+                            nullable = input.nullable,
+                            primaryKey = input.primaryKey,
+                        )
+                    }
+                }
+            }
     }
 }

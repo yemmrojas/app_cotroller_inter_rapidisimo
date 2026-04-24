@@ -1,5 +1,10 @@
 package com.yei.dev.controlerinterrapidisimo.data.local.dao
 
+import android.database.Cursor.FIELD_TYPE_BLOB
+import android.database.Cursor.FIELD_TYPE_FLOAT
+import android.database.Cursor.FIELD_TYPE_INTEGER
+import android.database.Cursor.FIELD_TYPE_NULL
+import android.database.Cursor.FIELD_TYPE_STRING
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteQuery
@@ -110,11 +115,11 @@ class DynamicTableDao(private val database: SupportSQLiteDatabase) {
                 val row = mutableMapOf<String, Any?>()
                 columnNames.forEachIndexed { index, columnName ->
                     val value = when (it.getType(index)) {
-                        android.database.Cursor.FIELD_TYPE_NULL -> null
-                        android.database.Cursor.FIELD_TYPE_INTEGER -> it.getLong(index)
-                        android.database.Cursor.FIELD_TYPE_FLOAT -> it.getDouble(index)
-                        android.database.Cursor.FIELD_TYPE_STRING -> it.getString(index)
-                        android.database.Cursor.FIELD_TYPE_BLOB -> it.getBlob(index)
+                        FIELD_TYPE_NULL -> null
+                        FIELD_TYPE_INTEGER -> it.getLong(index)
+                        FIELD_TYPE_FLOAT -> it.getDouble(index)
+                        FIELD_TYPE_STRING -> it.getString(index)
+                        FIELD_TYPE_BLOB -> it.getBlob(index)
                         else -> it.getString(index)
                     }
                     row[columnName] = value
