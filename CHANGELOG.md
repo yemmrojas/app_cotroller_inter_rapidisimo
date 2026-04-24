@@ -13,6 +13,13 @@ The format follows: `[FEATURE]` or `[FIX]` - Description
 - [FEATURE] - Pull request template with mandatory checklist
 - [FEATURE] - GitHub Actions CI/CD pipeline with Ktlint and test coverage validation
 - [FEATURE] - Gradle wrapper and root build files for CI/CD execution
+- [FEATURE] - Hilt dependency injection configuration in app module
+- [FEATURE] - Retrofit, Room, Coroutines, Flow, Navigation Compose dependencies
+- [FEATURE] - Kotlinx Serialization plugin and dependencies
+- [FEATURE] - Kotest for property-based testing
+- [FEATURE] - Clean Architecture package structure (domain, data, presentation layers)
+- [FEATURE] - ControllerApplication class with @HiltAndroidApp annotation
+- [FEATURE] - KSP (Kotlin Symbol Processing) for annotation processing
 
 ### Fixed
 - [FIX] - Enforce 80% minimum code coverage requirement in CI/CD pipeline
