@@ -77,7 +77,6 @@ class GetUserSessionUseCaseTest {
                 description = "Existing user session",
                 expectedUserSession = UserSession(
                     username = "testuser",
-                    identification = "123456789",
                     name = "Test User",
                 ),
             ),
@@ -85,7 +84,6 @@ class GetUserSessionUseCaseTest {
                 description = "Different user session",
                 expectedUserSession = UserSession(
                     username = "admin",
-                    identification = "987654321",
                     name = "Admin User",
                 ),
             ),

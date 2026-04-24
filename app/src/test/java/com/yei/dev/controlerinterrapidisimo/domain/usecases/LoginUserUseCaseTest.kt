@@ -71,7 +71,6 @@ class LoginUserUseCaseTest {
                 mac = "00:11:22:33:44:55",
                 expectedUserSession = UserSession(
                     username = "testuser",
-                    identification = "123456789",
                     name = "Test User",
                 ),
             ),
@@ -82,7 +81,6 @@ class LoginUserUseCaseTest {
                 mac = "AA:BB:CC:DD:EE:FF",
                 expectedUserSession = UserSession(
                     username = "admin",
-                    identification = "987654321",
                     name = "Admin User",
                 ),
             ),
