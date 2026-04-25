@@ -30,8 +30,9 @@ class VersionRepositoryImpl @Inject constructor(
 
             when (result) {
                 is Result.Success -> {
-                    // The API returns a simple string like "100", not a JSON object
-                    val apiVersion = result.data
+                    // The API returns a simple string like "100" (with quotes included)
+                    // Clean the version by removing quotes and trimming whitespace
+                    val apiVersion = result.data.trim().removeSurrounding("\"")
                     val comparisonStatus = compareVersions(localVersion, apiVersion)
                     emit(
                         Result.Success(
