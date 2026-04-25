@@ -125,9 +125,16 @@ class SplashViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Dismisses the current error or version mismatch state.
+     * Returns to loading state.
+     */
+    fun dismissError() {
+        _state.value = SplashState.Loading
+    }
+
     internal companion object {
         const val MESSAGE_UPDATE_NEEDED = "Update needed: Local version %s is older than API version %s"
         const val MESSAGE_AHEAD_OF_SERVER = "Version ahead: Local version %s is newer than API version %s"
-        const val MESSAGE_VERSION_CHECK_FAILED = "Version check failed: %s"
     }
 }

@@ -20,9 +20,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,37 +57,31 @@ fun SplashScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    // State for dialog
-    var showDialog by remember { mutableStateOf(false) }
-    var dialogType by remember { mutableStateOf(DialogType.ERROR) }
-    var dialogMessage by remember { mutableStateOf("") }
-
     // Trigger version check on first composition
     LaunchedEffect(Unit) {
         viewModel.checkVersionAndSession()
     }
 
-    // Handle navigation and dialog display based on state
+    // Handle navigation based on state
     LaunchedEffect(state) {
-        when (val currentState = state) {
+        when (state) {
             is SplashState.NavigateToLogin -> onNavigateToLogin()
             is SplashState.NavigateToHome -> onNavigateToHome()
-            is SplashState.VersionMismatch -> {
-                dialogType = DialogType.INFO
-                dialogMessage = currentState.message
-                showDialog = true
-            }
-            is SplashState.Error -> {
-                dialogType = DialogType.ERROR
-                dialogMessage = currentState.message
-                showDialog = true
-            }
-            else -> {
-                dialogType = DialogType.ERROR
-                dialogMessage = "Ocurrio un error desconocido. Por favor, intente nuevamente."
-                showDialog = true
-            }
+            else -> { /* Stay on splash */ }
         }
+    }
+
+    // Derive dialog state directly from ViewModel state (no need for remember)
+    val showDialog = state is SplashState.Error || state is SplashState.VersionMismatch
+    val dialogType = when (state) {
+        is SplashState.Error -> DialogType.ERROR
+        is SplashState.VersionMismatch -> DialogType.INFO
+        else -> DialogType.ERROR
+    }
+    val dialogMessage = when (val currentState = state) {
+        is SplashState.Error -> currentState.message
+        is SplashState.VersionMismatch -> currentState.message
+        else -> "Error desconocido"
     }
 
     Box(
@@ -260,7 +251,7 @@ fun SplashScreen(
             InfoDialog(
                 type = dialogType,
                 message = dialogMessage,
-                onDismiss = { showDialog = false }
+                onDismiss = { viewModel.dismissError() }
             )
         }
     }

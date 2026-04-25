@@ -126,22 +126,3 @@ fun InfoDialog(
         modifier = modifier
     )
 }
-
-
-// Preview composables
-@Composable
-private fun InfoDialogPreview() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Error dialog preview
-        InfoDialog(
-            type = DialogType.ERROR,
-            message = "No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.",
-            onDismiss = {}
-        )
-    }
-}
