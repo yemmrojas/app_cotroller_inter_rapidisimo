@@ -119,7 +119,7 @@ class VersionRepositoryImplTest {
             val patch = Arb.int(0..50).bind()
 
             val localVersion = "$major.$minor.$patch"
-            
+
             // Generate a random API version (could be same, newer, or older)
             val apiMajor = Arb.int(1..10).bind()
             val apiMinor = Arb.int(0..20).bind()
