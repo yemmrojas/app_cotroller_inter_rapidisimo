@@ -18,16 +18,26 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yei.dev.controlerinterrapidisimo.R
+import com.yei.dev.controlerinterrapidisimo.domain.models.SplashState
+import com.yei.dev.controlerinterrapidisimo.presentation.components.DialogType
+import com.yei.dev.controlerinterrapidisimo.presentation.components.InfoDialog
 import com.yei.dev.controlerinterrapidisimo.presentation.viewmodels.SplashViewModel
 
 /**
@@ -38,14 +48,51 @@ import com.yei.dev.controlerinterrapidisimo.presentation.viewmodels.SplashViewMo
  * - Company name and unit identifier
  * - Version information
  * - System status indicator
+ *
+ * Requirements: 1.1, 1.4, 1.5, 1.9
  */
 @Composable
 fun SplashScreen(
-    viewModel: SplashViewModel = hiltViewModel<SplashViewModel>(),
+    viewModel: SplashViewModel = hiltViewModel(),
     onNavigateToLogin: () -> Unit,
     onNavigateToHome: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // State for dialog
+    var showDialog by remember { mutableStateOf(false) }
+    var dialogType by remember { mutableStateOf(DialogType.ERROR) }
+    var dialogMessage by remember { mutableStateOf("") }
+
+    // Trigger version check on first composition
+    LaunchedEffect(Unit) {
+        viewModel.checkVersionAndSession()
+    }
+
+    // Handle navigation and dialog display based on state
+    LaunchedEffect(state) {
+        when (val currentState = state) {
+            is SplashState.NavigateToLogin -> onNavigateToLogin()
+            is SplashState.NavigateToHome -> onNavigateToHome()
+            is SplashState.VersionMismatch -> {
+                dialogType = DialogType.INFO
+                dialogMessage = currentState.message
+                showDialog = true
+            }
+            is SplashState.Error -> {
+                dialogType = DialogType.ERROR
+                dialogMessage = currentState.message
+                showDialog = true
+            }
+            else -> {
+                dialogType = DialogType.ERROR
+                dialogMessage = "Ocurrio un error desconocido. Por favor, intente nuevamente."
+                showDialog = true
+            }
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -118,41 +165,103 @@ fun SplashScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Sync status with indicator
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    // Orange indicator dot
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .background(
-                                color = colorResource(R.color.orange), // Orange/Amber color
-                                shape = RoundedCornerShape(4.dp)
+                // Status message based on state
+                when (state) {
+                    is SplashState.Loading -> {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(
+                                        color = colorResource(R.color.orange),
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
                             )
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = stringResource(R.string.splash_syncing_logistic_hub),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                        letterSpacing = 0.5.sp
-                    )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.splash_syncing_logistic_hub),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    }
+                    is SplashState.VersionMismatch, is SplashState.Error -> {
+                        // Don't show inline message, will show in dialog
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(
+                                        color = Color.Red,
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Verificación fallida",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Red,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    }
+                    else -> {
+                        // Navigation states - show loading
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(
+                                        color = colorResource(R.color.orange),
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.splash_syncing_logistic_hub),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Loading indicator
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = colorResource(R.color.orange),
-                    strokeWidth = 2.dp
-                )
+                // Loading indicator - only show when loading or navigating
+                if (state is SplashState.Loading ||
+                    state is SplashState.NavigateToLogin ||
+                    state is SplashState.NavigateToHome) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = colorResource(R.color.orange),
+                        strokeWidth = 2.dp
+                    )
+                }
             }
+        }
+
+        // Show dialog when needed
+        if (showDialog) {
+            InfoDialog(
+                type = dialogType,
+                message = dialogMessage,
+                onDismiss = { showDialog = false }
+            )
         }
     }
 }

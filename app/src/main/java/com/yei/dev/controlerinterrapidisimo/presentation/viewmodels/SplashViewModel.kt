@@ -2,6 +2,7 @@ package com.yei.dev.controlerinterrapidisimo.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yei.dev.controlerinterrapidisimo.domain.models.AppError
 import com.yei.dev.controlerinterrapidisimo.domain.models.Result
 import com.yei.dev.controlerinterrapidisimo.domain.models.SplashState
 import com.yei.dev.controlerinterrapidisimo.domain.models.VersionComparisonStatus
@@ -75,7 +76,7 @@ class SplashViewModel @Inject constructor(
 
                     is Result.Error -> {
                         _state.value = SplashState.Error(
-                            MESSAGE_VERSION_CHECK_FAILED.format(versionCheckResult.error)
+                            formatErrorMessage(versionCheckResult.error)
                         )
                     }
                 }
@@ -103,11 +104,24 @@ class SplashViewModel @Inject constructor(
 
                     is Result.Error -> {
                         _state.value = SplashState.Error(
-                            MESSAGE_VERSION_CHECK_FAILED.format(sessionResult.error)
+                            formatErrorMessage(sessionResult.error)
                         )
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Formats an AppError into a user-friendly error message.
+     */
+    private fun formatErrorMessage(error: AppError): String {
+        return when (error) {
+            is AppError.NetworkError -> "No se pudo conectar con el servidor. Verifica tu conexión a internet."
+            is AppError.ApiError -> "Error del servidor (${error.statusCode}). Intenta nuevamente más tarde."
+            is AppError.DatabaseError -> "Error al acceder a los datos locales. Intenta reiniciar la aplicación."
+            is AppError.ValidationError -> "Error de validación: ${error.message}"
+            is AppError.UnknownError -> "Ocurrió un error inesperado. Intenta nuevamente."
         }
     }
 
