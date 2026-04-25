@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">controler interrapidisimo</string>
+    <string name="app_name">controller interrapidisimo</string>
+    <string name="splash_name_inter_rapidisimo">"INTERRAPIDÍSIMO"</string>
+    <string name="splash_name_controller">CONTROLLER UNIT</string>
+    <string name="splash_verifying_system_status">%s - VERIFYING SYSTEM STATUS""</string>
+    <string name="splash_syncing_logistic_hub">SYNCING LOGISTICS HUB</string>
 </resources>

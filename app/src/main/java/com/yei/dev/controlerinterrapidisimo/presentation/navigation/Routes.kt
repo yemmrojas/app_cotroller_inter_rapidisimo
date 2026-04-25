@@ -5,8 +5,9 @@ import kotlinx.serialization.Serializable
 
 /**
  * Sealed class defining all navigation routes in the application.
- * Each route is a serializable data class or object that extends NavKey.
+ * Each route is a serializable data class or object that implements NavKey for Navigation 3.
  */
+@Serializable
 sealed class Routes : NavKey {
     
     /**
