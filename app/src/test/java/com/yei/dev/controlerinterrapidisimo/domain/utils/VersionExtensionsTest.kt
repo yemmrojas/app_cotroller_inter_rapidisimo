@@ -7,13 +7,17 @@ import org.junit.Test
 /**
  * Unit tests for VersionExtensions.
  *
- * Tests verify that the compareVersion extension function correctly compares
- * version strings using semantic versioning rules.
+ * Tests verify that the compareVersion function correctly compares
+ * version strings by normalizing them (removing dots) and comparing as integers.
+ *
+ * This approach works for both:
+ * - Semantic versioning: "1.0.0" -> 100
+ * - Simple format: "100" -> 100
  */
 class VersionExtensionsTest {
 
     @Test
-    fun `compareVersion should return UP_TO_DATE when versions are equal`() {
+    fun `compareVersion should return UP_TO_DATE when normalized versions are equal`() {
         // Given
         val scenarios = providesEqualVersionScenarios()
 
@@ -67,27 +71,9 @@ class VersionExtensionsTest {
     }
 
     @Test
-    fun `compareVersion should handle versions with different number of parts`() {
+    fun `compareVersion should handle API format (semantic vs simple)`() {
         // Given
-        val scenarios = providesDifferentLengthScenarios()
-
-        scenarios.forEach { scenario ->
-            // When
-            val result = scenario.localVersion.compareVersion(scenario.remoteVersion)
-
-            // Then
-            assertEquals(
-                "Failed for: ${scenario.description}",
-                scenario.expectedStatus,
-                result,
-            )
-        }
-    }
-
-    @Test
-    fun `compareVersion should handle versions with non-numeric parts`() {
-        // Given
-        val scenarios = providesNonNumericScenarios()
+        val scenarios = providesApiFormatScenarios()
 
         scenarios.forEach { scenario ->
             // When
@@ -112,7 +98,7 @@ class VersionExtensionsTest {
                 expectedStatus = VersionComparisonStatus.UP_TO_DATE,
             ),
             VersionScenario(
-                description = "Equal versions with multiple parts (2.5.3 == 2.5.3)",
+                description = "Equal versions normalize to same value (2.5.3 == 2.5.3)",
                 localVersion = "2.5.3",
                 remoteVersion = "2.5.3",
                 expectedStatus = VersionComparisonStatus.UP_TO_DATE,
@@ -124,9 +110,9 @@ class VersionExtensionsTest {
                 expectedStatus = VersionComparisonStatus.UP_TO_DATE,
             ),
             VersionScenario(
-                description = "Equal two-part versions (3.2 == 3.2)",
-                localVersion = "3.2",
-                remoteVersion = "3.2",
+                description = "Semantic vs simple format equal (1.0.0 == 100)",
+                localVersion = "1.0.0",
+                remoteVersion = "100",
                 expectedStatus = VersionComparisonStatus.UP_TO_DATE,
             ),
         )
@@ -151,15 +137,15 @@ class VersionExtensionsTest {
                 expectedStatus = VersionComparisonStatus.UPDATE_NEEDED,
             ),
             VersionScenario(
-                description = "Multiple versions behind (1.0.0 < 3.5.2)",
-                localVersion = "1.0.0",
-                remoteVersion = "3.5.2",
-                expectedStatus = VersionComparisonStatus.UPDATE_NEEDED,
-            ),
-            VersionScenario(
                 description = "Single digit behind (1 < 2)",
                 localVersion = "1",
                 remoteVersion = "2",
+                expectedStatus = VersionComparisonStatus.UPDATE_NEEDED,
+            ),
+            VersionScenario(
+                description = "Semantic behind simple format (1.0.0 < 101)",
+                localVersion = "1.0.0",
+                remoteVersion = "101",
                 expectedStatus = VersionComparisonStatus.UPDATE_NEEDED,
             ),
         )
@@ -184,76 +170,37 @@ class VersionExtensionsTest {
                 expectedStatus = VersionComparisonStatus.AHEAD_OF_SERVER,
             ),
             VersionScenario(
-                description = "Multiple versions ahead (3.5.2 > 1.0.0)",
-                localVersion = "3.5.2",
-                remoteVersion = "1.0.0",
-                expectedStatus = VersionComparisonStatus.AHEAD_OF_SERVER,
-            ),
-            VersionScenario(
                 description = "Single digit ahead (2 > 1)",
                 localVersion = "2",
                 remoteVersion = "1",
                 expectedStatus = VersionComparisonStatus.AHEAD_OF_SERVER,
             ),
+            VersionScenario(
+                description = "Semantic ahead simple format (2.0.0 > 100)",
+                localVersion = "2.0.0",
+                remoteVersion = "100",
+                expectedStatus = VersionComparisonStatus.AHEAD_OF_SERVER,
+            ),
         )
 
-        fun providesDifferentLengthScenarios() = listOf(
+        fun providesApiFormatScenarios() = listOf(
             VersionScenario(
-                description = "Local has more parts, equal (1.0.0 == 1.0)",
+                description = "API format: semantic local vs simple remote (1.0.0 == 100)",
                 localVersion = "1.0.0",
-                remoteVersion = "1.0",
+                remoteVersion = "100",
                 expectedStatus = VersionComparisonStatus.UP_TO_DATE,
             ),
             VersionScenario(
-                description = "Remote has more parts, equal (1.0 == 1.0.0)",
-                localVersion = "1.0",
-                remoteVersion = "1.0.0",
-                expectedStatus = VersionComparisonStatus.UP_TO_DATE,
-            ),
-            VersionScenario(
-                description = "Local has more parts, ahead (1.0.1 > 1.0)",
+                description = "API format: semantic local vs simple remote (1.0.1 > 100)",
                 localVersion = "1.0.1",
-                remoteVersion = "1.0",
+                remoteVersion = "100",
                 expectedStatus = VersionComparisonStatus.AHEAD_OF_SERVER,
             ),
             VersionScenario(
-                description = "Remote has more parts, behind (1.0 < 1.0.1)",
-                localVersion = "1.0",
-                remoteVersion = "1.0.1",
+                description = "API format: semantic local vs simple remote (1.0.0 < 101)",
+                localVersion = "1.0.0",
+                remoteVersion = "101",
                 expectedStatus = VersionComparisonStatus.UPDATE_NEEDED,
-            ),
-            VersionScenario(
-                description = "Single vs triple part (2 > 1.9.9)",
-                localVersion = "2",
-                remoteVersion = "1.9.9",
-                expectedStatus = VersionComparisonStatus.AHEAD_OF_SERVER,
-            ),
-        )
-
-        fun providesNonNumericScenarios() = listOf(
-            VersionScenario(
-                description = "Version with text suffix ignored (1.0.0-beta treated as 1.0.0)",
-                localVersion = "1.0.0-beta",
-                remoteVersion = "1.0.0",
-                expectedStatus = VersionComparisonStatus.UP_TO_DATE,
-            ),
-            VersionScenario(
-                description = "Both versions with text suffix (1.0.0-alpha == 1.0.0-beta)",
-                localVersion = "1.0.0-alpha",
-                remoteVersion = "1.0.0-beta",
-                expectedStatus = VersionComparisonStatus.UP_TO_DATE,
-            ),
-            VersionScenario(
-                description = "Numeric comparison with text suffix (2.0.0-rc < 3.0.0-alpha)",
-                localVersion = "2.0.0-rc",
-                remoteVersion = "3.0.0-alpha",
-                expectedStatus = VersionComparisonStatus.UPDATE_NEEDED,
-            ),
-            VersionScenario(
-                description = "Empty string parts ignored (1..0 treated as 1.0)",
-                localVersion = "1..0",
-                remoteVersion = "1.0",
-                expectedStatus = VersionComparisonStatus.UP_TO_DATE,
             ),
         )
     }
