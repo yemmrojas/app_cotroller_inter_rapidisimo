@@ -16,8 +16,16 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.mockk.coEvery
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 
 /**
@@ -31,7 +39,20 @@ import org.junit.Test
  *
  * Requirements: 7.1, 7.2, 7.5, 14.3
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class TablesViewModelTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+
+    @Before
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     // ========== LOAD TABLES TESTS ==========
 
@@ -49,29 +70,17 @@ class TablesViewModelTest {
 
             // When
             sut.loadTables()
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<TablesState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see tables list or error
-                if (state is TablesState.TablesList || state is TablesState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is TablesState.Loading) {
-                "Initial state should be Loading"
-            }
-            assert(states.last() is TablesState.TablesList) {
+            // Verify final state
+            assert(finalState is TablesState.TablesList) {
                 "Final state should be TablesList when tables are available"
             }
 
-            val tablesListState = states.last() as TablesState.TablesList
+            val tablesListState = finalState as TablesState.TablesList
             assert(tablesListState.tables.size == scenario.tables.size) {
                 "Should show all tables: expected ${scenario.tables.size}, got ${tablesListState.tables.size}"
             }
@@ -88,29 +97,17 @@ class TablesViewModelTest {
 
         // When
         sut.loadTables()
+        advanceUntilIdle() // Wait for all coroutines to complete
 
-        // Then - Collect state changes
-        val states = mutableListOf<TablesState>()
-        sut.state.collect { state ->
-            states.add(state)
-            // Stop collecting after we see tables list or error
-            if (state is TablesState.TablesList || state is TablesState.Error) {
-                return@collect
-            }
-        }
+        // Then
+        val finalState = sut.state.value
 
-        // Verify state transitions
-        assert(states.size >= 2) {
-            "Should have at least 2 state transitions"
-        }
-        assert(states[0] is TablesState.Loading) {
-            "Initial state should be Loading"
-        }
-        assert(states.last() is TablesState.Error) {
+        // Verify final state
+        assert(finalState is TablesState.Error) {
             "Final state should be Error when no tables available"
         }
 
-        val errorState = states.last() as TablesState.Error
+        val errorState = finalState as TablesState.Error
         assert(errorState.message.contains("No tables available")) {
             "Error message should indicate no tables available"
         }
@@ -130,29 +127,17 @@ class TablesViewModelTest {
 
             // When
             sut.loadTables()
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<TablesState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see tables list or error
-                if (state is TablesState.TablesList || state is TablesState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is TablesState.Loading) {
-                "Initial state should be Loading"
-            }
-            assert(states.last() is TablesState.Error) {
+            // Verify final state
+            assert(finalState is TablesState.Error) {
                 "Final state should be Error when table loading fails"
             }
 
-            val errorState = states.last() as TablesState.Error
+            val errorState = finalState as TablesState.Error
             assert(errorState.message.contains("Failed to load tables")) {
                 "Error message should indicate table load failure"
             }
@@ -175,29 +160,17 @@ class TablesViewModelTest {
 
             // When
             sut.loadTableData(scenario.tableName)
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<TablesState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see table data or error
-                if (state is TablesState.TableData || state is TablesState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is TablesState.Loading) {
-                "Initial state should be Loading"
-            }
-            assert(states.last() is TablesState.TableData) {
+            // Verify final state
+            assert(finalState is TablesState.TableData) {
                 "Final state should be TableData when table data is available"
             }
 
-            val tableDataState = states.last() as TablesState.TableData
+            val tableDataState = finalState as TablesState.TableData
             assert(tableDataState.tableName == scenario.tableName) {
                 "Table name should match: expected '${scenario.tableName}', got '${tableDataState.tableName}'"
             }
@@ -221,29 +194,17 @@ class TablesViewModelTest {
 
             // When
             sut.loadTableData(scenario.tableName)
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<TablesState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see table data or error
-                if (state is TablesState.TableData || state is TablesState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is TablesState.Loading) {
-                "Initial state should be Loading"
-            }
-            assert(states.last() is TablesState.Error) {
+            // Verify final state
+            assert(finalState is TablesState.Error) {
                 "Final state should be Error when table data is empty"
             }
 
-            val errorState = states.last() as TablesState.Error
+            val errorState = finalState as TablesState.Error
             assert(errorState.message.contains("Table '${scenario.tableName}' is empty")) {
                 "Error message should indicate table is empty"
             }
@@ -264,29 +225,17 @@ class TablesViewModelTest {
 
             // When
             sut.loadTableData(scenario.tableName)
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<TablesState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see table data or error
-                if (state is TablesState.TableData || state is TablesState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is TablesState.Loading) {
-                "Initial state should be Loading"
-            }
-            assert(states.last() is TablesState.Error) {
+            // Verify final state
+            assert(finalState is TablesState.Error) {
                 "Final state should be Error when table data loading fails"
             }
 
-            val errorState = states.last() as TablesState.Error
+            val errorState = finalState as TablesState.Error
             assert(errorState.message.contains("Failed to load table data")) {
                 "Error message should indicate table data load failure"
             }

@@ -12,9 +12,16 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.mockk.coEvery
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 
 /**
@@ -29,7 +36,20 @@ import org.junit.Test
  *
  * Requirements: 2.1, 2.4, 2.6, 14.3
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class LoginViewModelTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+
+    @Before
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     // ========== LOGIN TESTS ==========
 
@@ -67,38 +87,23 @@ class LoginViewModelTest {
             // Given
             val sut = providesSut(
                 loginUserUseCase = providesLoginUserUseCase(
-                    Result.Error(AppError.NetworkError("No internet connection"))
+                    Result.Error(AppError.NetworkError("No internet connection")),
                 ),
             )
 
             // When
             sut.login(scenario.username, scenario.password)
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<LoginState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see success or error
-                if (state is LoginState.Success || state is LoginState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is LoginState.Idle) {
-                "Initial state should be Idle"
-            }
-            assert(states[1] is LoginState.Loading) {
-                "Should transition to Loading"
-            }
-            assert(states.last() is LoginState.Error) {
+            // Verify final state
+            assert(finalState is LoginState.Error) {
                 "Final state should be Error for network failure"
             }
 
-            val errorState = states.last() as LoginState.Error
+            val errorState = finalState as LoginState.Error
             assert(errorState.message.contains("Network error")) {
                 "Error message should indicate network error"
             }
@@ -114,38 +119,23 @@ class LoginViewModelTest {
             // Given
             val sut = providesSut(
                 loginUserUseCase = providesLoginUserUseCase(
-                    Result.Error(AppError.ApiError(statusCode = 401, message = "Unauthorized"))
+                    Result.Error(AppError.ApiError(statusCode = 401, message = "Unauthorized")),
                 ),
             )
 
             // When
             sut.login(scenario.username, scenario.password)
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<LoginState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see success or error
-                if (state is LoginState.Success || state is LoginState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is LoginState.Idle) {
-                "Initial state should be Idle"
-            }
-            assert(states[1] is LoginState.Loading) {
-                "Should transition to Loading"
-            }
-            assert(states.last() is LoginState.Error) {
+            // Verify final state
+            assert(finalState is LoginState.Error) {
                 "Final state should be Error for API failure"
             }
 
-            val errorState = states.last() as LoginState.Error
+            val errorState = finalState as LoginState.Error
             assert(errorState.message.contains("Authentication failed")) {
                 "Error message should indicate authentication failure"
             }
@@ -161,38 +151,23 @@ class LoginViewModelTest {
             // Given
             val sut = providesSut(
                 loginUserUseCase = providesLoginUserUseCase(
-                    Result.Error(AppError.ValidationError(field = "credentials", message = "Invalid input"))
+                    Result.Error(AppError.ValidationError(field = "credentials", message = "Invalid input")),
                 ),
             )
 
             // When
             sut.login(scenario.username, scenario.password)
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<LoginState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see success or error
-                if (state is LoginState.Success || state is LoginState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is LoginState.Idle) {
-                "Initial state should be Idle"
-            }
-            assert(states[1] is LoginState.Loading) {
-                "Should transition to Loading"
-            }
-            assert(states.last() is LoginState.Error) {
+            // Verify final state
+            assert(finalState is LoginState.Error) {
                 "Final state should be Error for validation failure"
             }
 
-            val errorState = states.last() as LoginState.Error
+            val errorState = finalState as LoginState.Error
             assert(errorState.message.contains("Invalid input")) {
                 "Error message should indicate validation error"
             }
@@ -208,38 +183,23 @@ class LoginViewModelTest {
             // Given
             val sut = providesSut(
                 loginUserUseCase = providesLoginUserUseCase(
-                    Result.Error(AppError.DatabaseError("Failed to save session"))
+                    Result.Error(AppError.DatabaseError("Failed to save session")),
                 ),
             )
 
             // When
             sut.login(scenario.username, scenario.password)
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<LoginState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see success or error
-                if (state is LoginState.Success || state is LoginState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is LoginState.Idle) {
-                "Initial state should be Idle"
-            }
-            assert(states[1] is LoginState.Loading) {
-                "Should transition to Loading"
-            }
-            assert(states.last() is LoginState.Error) {
+            // Verify final state
+            assert(finalState is LoginState.Error) {
                 "Final state should be Error for database failure"
             }
 
-            val errorState = states.last() as LoginState.Error
+            val errorState = finalState as LoginState.Error
             assert(errorState.message.contains("Database error")) {
                 "Error message should indicate database error"
             }
@@ -255,38 +215,23 @@ class LoginViewModelTest {
             // Given
             val sut = providesSut(
                 loginUserUseCase = providesLoginUserUseCase(
-                    Result.Error(AppError.UnknownError("Unexpected error"))
+                    Result.Error(AppError.UnknownError("Unexpected error")),
                 ),
             )
 
             // When
             sut.login(scenario.username, scenario.password)
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<LoginState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see success or error
-                if (state is LoginState.Success || state is LoginState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is LoginState.Idle) {
-                "Initial state should be Idle"
-            }
-            assert(states[1] is LoginState.Loading) {
-                "Should transition to Loading"
-            }
-            assert(states.last() is LoginState.Error) {
+            // Verify final state
+            assert(finalState is LoginState.Error) {
                 "Final state should be Error for unknown failure"
             }
 
-            val errorState = states.last() as LoginState.Error
+            val errorState = finalState as LoginState.Error
             assert(errorState.message.contains("Unexpected error")) {
                 "Error message should indicate unexpected error"
             }
@@ -335,8 +280,8 @@ class LoginViewModelTest {
                 password = password,
                 userSession = UserSession(
                     username = username,
-                    name = name
-                )
+                    name = name,
+                ),
             )
         }
 

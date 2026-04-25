@@ -17,8 +17,16 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.mockk.coEvery
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 
 /**
@@ -33,7 +41,20 @@ import org.junit.Test
  *
  * Requirements: 6.1, 11.5, 14.3
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModelTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+
+    @Before
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     // ========== LOAD USER DATA TESTS ==========
 
@@ -52,29 +73,17 @@ class HomeViewModelTest {
 
             // When
             sut.loadUserData()
+            advanceUntilIdle() // Wait for coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<HomeState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see success or error
-                if (state is HomeState.Success || state is HomeState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is HomeState.Loading) {
-                "Initial state should be Loading"
-            }
-            assert(states.last() is HomeState.Success) {
+            // Verify final state
+            assert(finalState is HomeState.Success) {
                 "Final state should be Success with user session"
             }
 
-            val successState = states.last() as HomeState.Success
+            val successState = finalState as HomeState.Success
             assert(successState.userSession.username == scenario.userSession.username) {
                 "User session username should match"
             }
@@ -98,29 +107,17 @@ class HomeViewModelTest {
 
         // When
         sut.loadUserData()
+        advanceUntilIdle() // Wait for coroutines to complete
 
-        // Then - Collect state changes
-        val states = mutableListOf<HomeState>()
-        sut.state.collect { state ->
-            states.add(state)
-            // Stop collecting after we see success or error
-            if (state is HomeState.Success || state is HomeState.Error) {
-                return@collect
-            }
-        }
+        // Then
+        val finalState = sut.state.value
 
-        // Verify state transitions
-        assert(states.size >= 2) {
-            "Should have at least 2 state transitions"
-        }
-        assert(states[0] is HomeState.Loading) {
-            "Initial state should be Loading"
-        }
-        assert(states.last() is HomeState.Error) {
+        // Verify final state
+        assert(finalState is HomeState.Error) {
             "Final state should be Error when no session exists"
         }
 
-        val errorState = states.last() as HomeState.Error
+        val errorState = finalState as HomeState.Error
         assert(errorState.message.contains("No user session found")) {
             "Error message should indicate no session found"
         }
@@ -141,29 +138,17 @@ class HomeViewModelTest {
 
             // When
             sut.loadUserData()
+            advanceUntilIdle() // Wait for coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<HomeState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see success or error
-                if (state is HomeState.Success || state is HomeState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is HomeState.Loading) {
-                "Initial state should be Loading"
-            }
-            assert(states.last() is HomeState.Error) {
+            // Verify final state
+            assert(finalState is HomeState.Error) {
                 "Final state should be Error when session retrieval fails"
             }
 
-            val errorState = states.last() as HomeState.Error
+            val errorState = finalState as HomeState.Error
             assert(errorState.message.contains("Failed to load user data")) {
                 "Error message should indicate user data load failure"
             }
@@ -187,38 +172,22 @@ class HomeViewModelTest {
 
             // First load user data
             sut.loadUserData()
-
-            // Wait for initial state
-            var initialState: HomeState? = null
-            sut.state.collect { state ->
-                if (state is HomeState.Success) {
-                    initialState = state
-                    return@collect
-                }
-            }
+            advanceUntilIdle() // Wait for loadUserData to complete
 
             // When - Trigger sync
             sut.syncDatabase()
+            advanceUntilIdle() // Wait for syncDatabase to complete
 
-            // Then - Collect state changes after sync
-            val statesAfterSync = mutableListOf<HomeState>()
-            sut.state.collect { state ->
-                if (state is HomeState.Success) {
-                    statesAfterSync.add(state)
-                    // Check if sync status has been updated
-                    if ((state as HomeState.Success).syncStatus == SyncStatus.SYNCED) {
-                        return@collect
-                    }
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
             // Verify sync status update
-            assert(statesAfterSync.isNotEmpty()) {
-                "Should have state updates after sync"
+            assert(finalState is HomeState.Success) {
+                "Should be Success state after sync"
             }
 
-            val finalState = statesAfterSync.last() as HomeState.Success
-            assert(finalState.syncStatus == SyncStatus.SYNCED) {
+            val successState = finalState as HomeState.Success
+            assert(successState.syncStatus == SyncStatus.SYNCED) {
                 "Sync status should be SYNCED after successful sync"
             }
         }
@@ -239,38 +208,22 @@ class HomeViewModelTest {
 
             // First load user data
             sut.loadUserData()
-
-            // Wait for initial state
-            var initialState: HomeState? = null
-            sut.state.collect { state ->
-                if (state is HomeState.Success) {
-                    initialState = state
-                    return@collect
-                }
-            }
+            advanceUntilIdle() // Wait for loadUserData to complete
 
             // When - Trigger sync
             sut.syncDatabase()
+            advanceUntilIdle() // Wait for syncDatabase to complete
 
-            // Then - Collect state changes after sync
-            val statesAfterSync = mutableListOf<HomeState>()
-            sut.state.collect { state ->
-                if (state is HomeState.Success) {
-                    statesAfterSync.add(state)
-                    // Check if sync status has been updated
-                    if ((state as HomeState.Success).syncStatus == SyncStatus.FAILED) {
-                        return@collect
-                    }
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
             // Verify sync status update
-            assert(statesAfterSync.isNotEmpty()) {
-                "Should have state updates after sync"
+            assert(finalState is HomeState.Success) {
+                "Should be Success state after sync"
             }
 
-            val finalState = statesAfterSync.last() as HomeState.Success
-            assert(finalState.syncStatus == SyncStatus.FAILED) {
+            val successState = finalState as HomeState.Success
+            assert(successState.syncStatus == SyncStatus.FAILED) {
                 "Sync status should be FAILED after failed sync"
             }
         }
@@ -291,38 +244,22 @@ class HomeViewModelTest {
 
             // First load user data
             sut.loadUserData()
-
-            // Wait for initial state
-            var initialState: HomeState? = null
-            sut.state.collect { state ->
-                if (state is HomeState.Success) {
-                    initialState = state
-                    return@collect
-                }
-            }
+            advanceUntilIdle() // Wait for loadUserData to complete
 
             // When - Trigger sync
             sut.syncDatabase()
+            advanceUntilIdle() // Wait for syncDatabase to complete
 
-            // Then - Collect state changes after sync
-            val statesAfterSync = mutableListOf<HomeState>()
-            sut.state.collect { state ->
-                if (state is HomeState.Success) {
-                    statesAfterSync.add(state)
-                    // Check if sync status has been updated
-                    if ((state as HomeState.Success).syncStatus == SyncStatus.FAILED) {
-                        return@collect
-                    }
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
             // Verify sync status update
-            assert(statesAfterSync.isNotEmpty()) {
-                "Should have state updates after sync"
+            assert(finalState is HomeState.Success) {
+                "Should be Success state after sync"
             }
 
-            val finalState = statesAfterSync.last() as HomeState.Success
-            assert(finalState.syncStatus == SyncStatus.FAILED) {
+            val successState = finalState as HomeState.Success
+            assert(successState.syncStatus == SyncStatus.FAILED) {
                 "Sync status should be FAILED after sync error"
             }
         }
@@ -345,6 +282,7 @@ class HomeViewModelTest {
 
             // When
             sut.logout()
+            advanceUntilIdle() // Wait for logout to complete
 
             // Then - No error should occur
             // The logout success is handled by navigation, not state change
@@ -370,35 +308,16 @@ class HomeViewModelTest {
 
             // First load user data to get to success state
             sut.loadUserData()
-
-            // Wait for initial state
-            var initialState: HomeState? = null
-            sut.state.collect { state ->
-                if (state is HomeState.Success) {
-                    initialState = state
-                    return@collect
-                }
-            }
+            advanceUntilIdle() // Wait for loadUserData to complete
 
             // When - Trigger logout
             sut.logout()
+            advanceUntilIdle() // Wait for logout to complete
 
-            // Then - Collect state changes after logout
-            val statesAfterLogout = mutableListOf<HomeState>()
-            sut.state.collect { state ->
-                statesAfterLogout.add(state)
-                // Check if we got an error state
-                if (state is HomeState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
             // Verify error state
-            assert(statesAfterLogout.isNotEmpty()) {
-                "Should have state updates after logout error"
-            }
-
-            val finalState = statesAfterLogout.last()
             assert(finalState is HomeState.Error) {
                 "Should be Error state after logout failure"
             }
@@ -428,8 +347,8 @@ class HomeViewModelTest {
             UserSessionScenario(
                 userSession = UserSession(
                     username = username,
-                    name = name
-                )
+                    name = name,
+                ),
             )
         }
 

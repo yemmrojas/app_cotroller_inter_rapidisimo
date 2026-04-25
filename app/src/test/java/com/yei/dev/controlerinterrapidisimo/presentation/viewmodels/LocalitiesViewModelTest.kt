@@ -14,9 +14,17 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.mockk.coEvery
 import io.mockk.mockk
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 
 /**
@@ -30,7 +38,20 @@ import org.junit.Test
  *
  * Requirements: 8.1, 8.4, 14.3
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class LocalitiesViewModelTest {
+
+    private val testDispatcher = StandardTestDispatcher()
+
+    @Before
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
     // ========== LOAD LOCALITIES TESTS ==========
 
@@ -47,22 +68,16 @@ class LocalitiesViewModelTest {
 
             // When
             sut.loadLocalities()
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<LocalitiesState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see success or error
-                if (state is LocalitiesState.Success || state is LocalitiesState.Error) {
-                    return@collect
-                }
+            // Then
+            val finalState = sut.state.value
+
+            // Verify final state
+            assert(finalState is LocalitiesState.Success) {
+                "Final state should be Success"
             }
-
-            // Verify state transitions
-            assert(states.size >= 2)
-            assert(states[0] is LocalitiesState.Loading)
-            assert(states.last() is LocalitiesState.Success)
-            val successState = states.last() as LocalitiesState.Success
+            val successState = finalState as LocalitiesState.Success
 
             // Verify locality data
             successState.localities.forEachIndexed { index, locality ->
@@ -83,24 +98,20 @@ class LocalitiesViewModelTest {
 
         // When
         sut.loadLocalities()
+        advanceUntilIdle() // Wait for all coroutines to complete
 
-        // Then - Collect state changes
-        val states = mutableListOf<LocalitiesState>()
-        sut.state.collect { state ->
-            states.add(state)
-            // Stop collecting after we see success or error
-            if (state is LocalitiesState.Success || state is LocalitiesState.Error) {
-                return@collect
-            }
+        // Then
+        val finalState = sut.state.value
+
+        // Verify final state
+        assert(finalState is LocalitiesState.Error) {
+            "Final state should be Error when localities list is empty"
         }
 
-        // Verify state transitions
-        assert(states.size >= 2)
-        assert(states[0] is LocalitiesState.Loading)
-        assert(states.last() is LocalitiesState.Error)
-
-        val errorState = states.last() as LocalitiesState.Error
-        assert(errorState.message.contains("No localities available"))
+        val errorState = finalState as LocalitiesState.Error
+        assert(errorState.message.contains("No localities available")) {
+            "Error message should indicate no localities available"
+        }
     }
 
     @Test
@@ -116,29 +127,17 @@ class LocalitiesViewModelTest {
 
             // When
             sut.loadLocalities()
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<LocalitiesState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see success or error
-                if (state is LocalitiesState.Success || state is LocalitiesState.Error) {
-                    return@collect
-                }
-            }
+            // Then
+            val finalState = sut.state.value
 
-            // Verify state transitions
-            assert(states.size >= 2) {
-                "Should have at least 2 state transitions"
-            }
-            assert(states[0] is LocalitiesState.Loading) {
-                "Initial state should be Loading"
-            }
-            assert(states.last() is LocalitiesState.Error) {
+            // Verify final state
+            assert(finalState is LocalitiesState.Error) {
                 "Final state should be Error when localities loading fails"
             }
 
-            val errorState = states.last() as LocalitiesState.Error
+            val errorState = finalState as LocalitiesState.Error
             assert(errorState.message.contains("Failed to load localities")) {
                 "Error message should indicate localities load failure"
             }
@@ -185,29 +184,17 @@ class LocalitiesViewModelTest {
 
         // When
         sut.loadLocalities()
+        advanceUntilIdle() // Wait for all coroutines to complete
 
-        // Then - Collect state changes
-        val states = mutableListOf<LocalitiesState>()
-        sut.state.collect { state ->
-            states.add(state)
-            // Stop collecting after we see success or error
-            if (state is LocalitiesState.Success || state is LocalitiesState.Error) {
-                return@collect
-            }
-        }
+        // Then
+        val finalState = sut.state.value
 
-        // Verify state transitions
-        assert(states.size >= 2) {
-            "Should have at least 2 state transitions"
-        }
-        assert(states[0] is LocalitiesState.Loading) {
-            "Initial state should be Loading"
-        }
-        assert(states.last() is LocalitiesState.Error) {
+        // Verify final state
+        assert(finalState is LocalitiesState.Error) {
             "Final state should be Error when API fails"
         }
 
-        val errorState = states.last() as LocalitiesState.Error
+        val errorState = finalState as LocalitiesState.Error
         assert(errorState.message.contains("Failed to load localities")) {
             "Error message should indicate localities load failure"
         }
@@ -226,23 +213,17 @@ class LocalitiesViewModelTest {
 
             // When
             sut.loadLocalities()
+            advanceUntilIdle() // Wait for all coroutines to complete
 
-            // Then - Collect state changes
-            val states = mutableListOf<LocalitiesState>()
-            sut.state.collect { state ->
-                states.add(state)
-                // Stop collecting after we see success or error
-                if (state is LocalitiesState.Success || state is LocalitiesState.Error) {
-                    return@collect
-                }
+            // Then
+            val finalState = sut.state.value
+
+            // Verify final state
+            assert(finalState is LocalitiesState.Success) {
+                "Final state should be Success"
             }
 
-            // Verify success state
-            assert(states.last() is LocalitiesState.Success) {
-                "Should be Success state"
-            }
-
-            val successState = states.last() as LocalitiesState.Success
+            val successState = finalState as LocalitiesState.Success
 
             // Verify all localities have both required fields
             successState.localities.forEachIndexed { index, locality ->

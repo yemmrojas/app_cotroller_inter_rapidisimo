@@ -47,11 +47,24 @@ class LocalitiesViewModel @Inject constructor(
                     }
                     is Result.Error -> {
                         _state.value = LocalitiesState.Error(
-                            "Failed to load localities: ${localitiesResult.error}"
+                            "Failed to load localities: ${formatError(localitiesResult.error)}"
                         )
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Formats an AppError into a user-friendly error message.
+     */
+    private fun formatError(error: AppError): String {
+        return when (error) {
+            is AppError.NetworkError -> "Network error - ${error.message}"
+            is AppError.ApiError -> "API error - ${error.message}"
+            is AppError.DatabaseError -> "Database error - ${error.message}"
+            is AppError.ValidationError -> "Validation error - ${error.message}"
+            is AppError.UnknownError -> "Unexpected error - ${error.message}"
         }
     }
 }
