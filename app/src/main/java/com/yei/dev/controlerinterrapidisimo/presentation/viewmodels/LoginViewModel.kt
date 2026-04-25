@@ -22,7 +22,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val loginUserUseCase: LoginUserUseCase
+    private val loginUserUseCase: LoginUserUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow<LoginState>(LoginState.Idle)
     val state: StateFlow<LoginState> = _state.asStateFlow()
@@ -30,30 +30,21 @@ class LoginViewModel @Inject constructor(
     /**
      * Attempts to authenticate the user with provided credentials.
      *
-     * @param usuario The username for authentication
+     * @param userName The username for authentication
      * @param password The user's password
      *
      * Requirements: 2.1, 2.4, 2.6, 14.3
      */
-    fun login(usuario: String, password: String) {
+    fun login(userName: String, password: String) {
         viewModelScope.launch {
             _state.value = LoginState.Loading
 
-            // Get MAC address (placeholder - should be implemented properly)
-            val macAddress = getMacAddress()
-
-            val result = loginUserUseCase(usuario, password, macAddress)
+            val result = loginUserUseCase(userName, password, "")
             result.collect { loginResult ->
                 _state.value = when (loginResult) {
                     is Result.Success -> LoginState.Success
                     is Result.Error -> {
-                        val message = when (val error = loginResult.error) {
-                            is AppError.NetworkError -> "Network error: ${error.message}"
-                            is AppError.ApiError -> "Authentication failed: ${error.message}"
-                            is AppError.ValidationError -> "Invalid input: ${error.message}"
-                            is AppError.DatabaseError -> "Database error: ${error.message}"
-                            is AppError.UnknownError -> "Unexpected error: ${error.message}"
-                        }
+                        val message = getErrorMessage(loginResult.error)
                         LoginState.Error(message)
                     }
                 }
@@ -62,16 +53,21 @@ class LoginViewModel @Inject constructor(
     }
 
     /**
-     * Gets the device MAC address.
-     *
-     * Note: This is a placeholder implementation. In a real app, this should
-     * retrieve the actual device MAC address using appropriate Android APIs.
-     *
-     * @return The device MAC address as a string
+     * Dismisses the current error state and returns to Idle state.
      */
-    private fun getMacAddress(): String {
-        // TODO: Implement proper MAC address retrieval
-        // For now, return a placeholder value
-        return "00:00:00:00:00:00"
+    fun dismissError() {
+        if (_state.value is LoginState.Error) {
+            _state.value = LoginState.Idle
+        }
+    }
+
+    private fun getErrorMessage(error: AppError): String {
+        return when (error) {
+            is AppError.NetworkError -> "Network error: ${error.message}"
+            is AppError.ApiError -> "Authentication failed: ${error.message}"
+            is AppError.ValidationError -> "Invalid input: ${error.message}"
+            is AppError.DatabaseError -> "Database error: ${error.message}"
+            is AppError.UnknownError -> "Unexpected error: ${error.message}"
+        }
     }
 }

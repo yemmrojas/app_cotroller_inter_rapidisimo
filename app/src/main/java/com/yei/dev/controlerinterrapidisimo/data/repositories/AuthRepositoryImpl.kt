@@ -76,9 +76,7 @@ class AuthRepositoryImpl @Inject constructor(
                 val userSession = authResponse.toUserSession()
 
                 // Validate user session data
-                if (userSession.username.isBlank() ||
-                    userSession.name.isBlank()
-                ) {
+                if (userSession.username.isBlank() || userSession.name.isBlank()) {
                     emit(
                         Result.Error(
                             AppError.ValidationError(

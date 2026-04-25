@@ -22,7 +22,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -43,13 +42,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yei.dev.controlerinterrapidisimo.R
 import com.yei.dev.controlerinterrapidisimo.domain.models.LoginState
+import com.yei.dev.controlerinterrapidisimo.presentation.components.DialogType
+import com.yei.dev.controlerinterrapidisimo.presentation.components.InfoDialog
 import com.yei.dev.controlerinterrapidisimo.presentation.viewmodels.LoginViewModel
 
 /**
@@ -64,13 +64,13 @@ import com.yei.dev.controlerinterrapidisimo.presentation.viewmodels.LoginViewMod
 fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
     onLoginSuccess: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
 
-    var usuario by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var userName by remember { mutableStateOf("cGFtLm1lcmVkeTIx") }
+    var password by remember { mutableStateOf("SW50ZXIyMDIx") }
     var passwordVisible by remember { mutableStateOf(false) }
 
     // Handle navigation on successful login
@@ -80,18 +80,25 @@ fun LoginScreen(
         }
     }
 
+    // Derive dialog state directly from ViewModel state
+    val showDialog = state is LoginState.Error
+    val dialogMessage = when (val currentState = state) {
+        is LoginState.Error -> currentState.message
+        else -> "Error desconocido"
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color.White),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 32.dp)
+                .padding(horizontal = 32.dp),
         ) {
             Spacer(modifier = Modifier.weight(1f))
 
@@ -101,15 +108,15 @@ fun LoginScreen(
                     .size(100.dp)
                     .background(
                         color = Color.Black,
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(8.dp),
                     ),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Default.LocalShipping,
                     contentDescription = "Interrapidísimo Logo",
                     tint = Color.White,
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier.size(56.dp),
                 )
             }
 
@@ -121,7 +128,7 @@ fun LoginScreen(
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black,
-                letterSpacing = 1.sp
+                letterSpacing = 1.sp,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -130,30 +137,30 @@ fun LoginScreen(
                 text = "Enter your credentials",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Normal,
-                color = Color.Gray
+                color = Color.Gray,
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             // Usuario input field
             OutlinedTextField(
-                value = usuario,
-                onValueChange = { usuario = it },
+                value = userName,
+                onValueChange = { userName = it },
                 label = { Text("Usuario") },
                 singleLine = true,
                 enabled = state !is LoginState.Loading,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Next
+                    imeAction = ImeAction.Next,
                 ),
                 keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) },
                 ),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = colorResource(R.color.orange),
-                    focusedLabelColor = colorResource(R.color.orange)
+                    focusedLabelColor = colorResource(R.color.orange),
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -165,41 +172,41 @@ fun LoginScreen(
                 label = { Text("Password") },
                 singleLine = true,
                 enabled = state !is LoginState.Loading,
-                visualTransformation = if (passwordVisible) 
-                    VisualTransformation.None 
-                else 
+                visualTransformation = if (passwordVisible)
+                    VisualTransformation.None
+                else
                     PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
+                    imeAction = ImeAction.Done,
                 ),
                 keyboardActions = KeyboardActions(
                     onDone = {
                         focusManager.clearFocus()
-                        if (usuario.isNotBlank() && password.isNotBlank()) {
-                            viewModel.login(usuario, password)
+                        if (userName.isNotBlank() && password.isNotBlank()) {
+                            viewModel.login(userName, password)
                         }
-                    }
+                    },
                 ),
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
-                            imageVector = if (passwordVisible) 
-                                Icons.Default.Visibility 
-                            else 
+                            imageVector = if (passwordVisible)
+                                Icons.Default.Visibility
+                            else
                                 Icons.Default.VisibilityOff,
-                            contentDescription = if (passwordVisible) 
-                                "Hide password" 
-                            else 
-                                "Show password"
+                            contentDescription = if (passwordVisible)
+                                "Hide password"
+                            else
+                                "Show password",
                         )
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = colorResource(R.color.orange),
-                    focusedLabelColor = colorResource(R.color.orange)
+                    focusedLabelColor = colorResource(R.color.orange),
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -208,46 +215,44 @@ fun LoginScreen(
             Button(
                 onClick = {
                     focusManager.clearFocus()
-                    viewModel.login(usuario, password)
+                    viewModel.login(userName, password)
                 },
-                enabled = state !is LoginState.Loading && 
-                         usuario.isNotBlank() && 
-                         password.isNotBlank(),
+                enabled = state !is LoginState.Loading &&
+                    userName.isNotBlank() &&
+                    password.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = colorResource(R.color.orange),
-                    contentColor = Color.White
+                    contentColor = Color.White,
                 ),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(50.dp),
             ) {
                 if (state is LoginState.Loading) {
                     CircularProgressIndicator(
                         color = Color.White,
                         modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                 } else {
                     Text(
                         text = "LOGIN",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                        letterSpacing = 1.sp,
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Error message
-            if (state is LoginState.Error) {
-                Text(
-                    text = (state as LoginState.Error).message,
-                    fontSize = 14.sp,
-                    color = Color.Red,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+            // Show dialog when there's an error
+            if (showDialog) {
+                InfoDialog(
+                    type = DialogType.ERROR,
+                    message = dialogMessage,
+                    onDismiss = { viewModel.dismissError() },
                 )
             }
 

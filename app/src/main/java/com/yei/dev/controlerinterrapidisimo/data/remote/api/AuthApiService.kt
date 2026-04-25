@@ -30,7 +30,7 @@ interface AuthApiService {
      * @param request Authentication request body containing credentials
      * @return Response containing AuthResponseDto with user information
      */
-    @POST("api/Seguridad/AuthenticaUsuarioApp")
+    @POST("FtEntregaElectronica/MultiCanales/ApiSeguridadPruebas/api/Seguridad/AuthenticaUsuarioApp")
     suspend fun authenticateUser(
         @Header("Usuario") usuario: String,
         @Header("Identificacion") identificacion: String,
