@@ -43,8 +43,7 @@ object NetworkModule {
     //
     // For now using the main API base URL. Auth service will need special handling.
     // TODO: Consider using different Retrofit instances for different base URLs
-    private const val BASE_URL = "https://apitesting.interrapidisimo.co/apicontrollerpruebas/"
-    private const val AUTH_BASE_URL = "https://apitesting.interrapidisimo.co/FtEntregaElectronica/MultiCanales/ApiSeguridadPruebas/"
+    private const val BASE_URL = "https://apitesting.interrapidisimo.co/"
     private const val TIMEOUT_SECONDS = 30L
 
     /**
@@ -87,7 +86,7 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(
         jsonParsingInterceptor: JsonParsingInterceptor,
-        loggingInterceptor: HttpLoggingInterceptor
+        loggingInterceptor: HttpLoggingInterceptor,
     ): OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(jsonParsingInterceptor)
         .addInterceptor(loggingInterceptor)
@@ -104,7 +103,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(
         okHttpClient: OkHttpClient,
-        json: Json
+        json: Json,
     ): Retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(okHttpClient)
@@ -121,9 +120,9 @@ object NetworkModule {
     @Named("auth")
     fun provideAuthRetrofit(
         okHttpClient: OkHttpClient,
-        json: Json
+        json: Json,
     ): Retrofit = Retrofit.Builder()
-        .baseUrl(AUTH_BASE_URL)
+        .baseUrl(BASE_URL)
         .client(okHttpClient)
         .addConverterFactory(ScalarsConverterFactory.create()) // For simple string responses
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType())) // For JSON responses
@@ -167,6 +166,6 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideNetworkHandler(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): NetworkHandler = NetworkHandler(context)
 }

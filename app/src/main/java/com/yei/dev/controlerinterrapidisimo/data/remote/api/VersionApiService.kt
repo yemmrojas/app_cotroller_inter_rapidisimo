@@ -15,11 +15,11 @@ interface VersionApiService {
      *
      * Endpoint: GET /api/ParametrosFramework/ConsultarParametrosFramework/VPStoreAppControl
      * Official URL: https://apitesting.interrapidisimo.co/apicontrollerpruebas/api/ParametrosFramework/ConsultarParametrosFramework/VPStoreAppControl
-     * 
+     *
      * Note: This endpoint returns a simple string (e.g., "100") not a JSON object.
      *
      * @return Response containing the version as a String
      */
-    @GET("api/ParametrosFramework/ConsultarParametrosFramework/VPStoreAppControl")
+    @GET("apicontrollerpruebas/api/ParametrosFramework/ConsultarParametrosFramework/VPStoreAppControl")
     suspend fun getCurrentVersion(): Response<String>
 }

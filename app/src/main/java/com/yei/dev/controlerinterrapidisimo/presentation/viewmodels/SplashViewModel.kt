@@ -59,16 +59,16 @@ class SplashViewModel @Inject constructor(
                             VersionComparisonStatus.UPDATE_NEEDED -> {
                                 _state.value = SplashState.VersionMismatch(
                                     MESSAGE_UPDATE_NEEDED.format(
-                                        versionStatus.localVersion, versionStatus.apiVersion
-                                    )
+                                        versionStatus.localVersion, versionStatus.apiVersion,
+                                    ),
                                 )
                             }
 
                             VersionComparisonStatus.AHEAD_OF_SERVER -> {
                                 _state.value = SplashState.VersionMismatch(
                                     MESSAGE_AHEAD_OF_SERVER.format(
-                                        versionStatus.localVersion, versionStatus.apiVersion
-                                    )
+                                        versionStatus.localVersion, versionStatus.apiVersion,
+                                    ),
                                 )
                             }
                         }
@@ -76,7 +76,7 @@ class SplashViewModel @Inject constructor(
 
                     is Result.Error -> {
                         _state.value = SplashState.Error(
-                            formatErrorMessage(versionCheckResult.error)
+                            formatErrorMessage(versionCheckResult.error),
                         )
                     }
                 }
@@ -104,7 +104,7 @@ class SplashViewModel @Inject constructor(
 
                     is Result.Error -> {
                         _state.value = SplashState.Error(
-                            formatErrorMessage(sessionResult.error)
+                            formatErrorMessage(sessionResult.error),
                         )
                     }
                 }
