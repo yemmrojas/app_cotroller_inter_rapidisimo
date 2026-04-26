@@ -49,7 +49,8 @@ class DataSyncRepositoryImplTest {
             providesSchemaScenarios(),
         ) { scenario ->
             // Given
-            val schemaDto = SchemaResponseDto(tables = scenario.tableDtos)
+            // SchemaResponseDto is now a List<TableSchemaDto> directly
+            val schemaDto: SchemaResponseDto = scenario.tableDtos
             val sut = providesSut(
                 networkHandler = providesNetworkHandler(Result.Success(schemaDto)),
                 database = providesAppDatabase(providesDynamicTableDao()),
@@ -106,7 +107,8 @@ class DataSyncRepositoryImplTest {
     @Test
     fun `fetchDatabaseSchema with empty schema should return empty list`() = runTest {
         // Given
-        val schemaDto = SchemaResponseDto(tables = emptyList())
+        // SchemaResponseDto is now a List<TableSchemaDto> directly
+        val schemaDto: SchemaResponseDto = emptyList()
         val sut = providesSut(
             networkHandler = providesNetworkHandler(Result.Success(schemaDto)),
             database = providesAppDatabase(providesDynamicTableDao()),

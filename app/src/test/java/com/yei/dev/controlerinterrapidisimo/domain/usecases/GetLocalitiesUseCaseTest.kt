@@ -59,15 +59,15 @@ class GetLocalitiesUseCaseTest {
             SuccessScenario(
                 description = "Multiple localities",
                 expectedLocalities = listOf(
-                    Locality(cityAbbreviation = "BOG", fullName = "Bogotá D.C."),
-                    Locality(cityAbbreviation = "MED", fullName = "Medellín"),
-                    Locality(cityAbbreviation = "CAL", fullName = "Cali"),
+                    Locality(localityId = "05001000", cityAbbreviation = "BOG", fullName = "Bogotá D.C."),
+                    Locality(localityId = "05002000", cityAbbreviation = "MED", fullName = "Medellín"),
+                    Locality(localityId = "05003000", cityAbbreviation = "CAL", fullName = "Cali"),
                 ),
             ),
             SuccessScenario(
                 description = "Single locality",
                 expectedLocalities = listOf(
-                    Locality(cityAbbreviation = "BAQ", fullName = "Barranquilla"),
+                    Locality(localityId = "05004000", cityAbbreviation = "BAQ", fullName = "Barranquilla"),
                 ),
             ),
             SuccessScenario(

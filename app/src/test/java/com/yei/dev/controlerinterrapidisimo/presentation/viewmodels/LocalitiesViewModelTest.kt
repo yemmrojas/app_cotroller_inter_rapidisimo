@@ -271,6 +271,10 @@ class LocalitiesViewModelTest {
          * Provides a Locality generator.
          */
         private fun Arb.Companion.locality(): Arb<Locality> = arbitrary {
+            val localityId = Arb.string(minSize = 8, maxSize = 8)
+                .filter { it.isNotBlank() && it.trim() == it }
+                .bind()
+
             val cityAbbreviation = Arb.string(minSize = 2, maxSize = 10)
                 .filter { it.isNotBlank() && it.trim() == it }
                 .bind()
@@ -280,6 +284,7 @@ class LocalitiesViewModelTest {
                 .bind()
 
             Locality(
+                localityId = localityId,
                 cityAbbreviation = cityAbbreviation,
                 fullName = fullName
             )

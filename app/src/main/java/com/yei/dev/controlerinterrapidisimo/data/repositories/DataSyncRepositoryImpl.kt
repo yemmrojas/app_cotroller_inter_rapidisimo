@@ -40,7 +40,8 @@ class DataSyncRepositoryImpl @Inject constructor(
         when (schemaResult) {
             is Result.Success -> {
                 try {
-                    val schemas = tableSchemaConverter.convertList(schemaResult.data.tables)
+                    // schemaResult.data is now a List<TableSchemaDto> directly
+                    val schemas = tableSchemaConverter.convertList(schemaResult.data)
                     emit(Result.Success(schemas))
                 } catch (e: Exception) {
                     emit(
@@ -85,8 +86,8 @@ class DataSyncRepositoryImpl @Inject constructor(
                             dynamicTableDao.updateTableSchema(schema.tableName, schema.columns)
                             tablesUpdated++
                         } else {
-                            // Create new table
-                            dynamicTableDao.createTable(schema.tableName, schema.columns)
+                            // Create new table using API SQL if available
+                            dynamicTableDao.createTable(schema.tableName, schema.columns, schema.queryCreacion)
                             tablesCreated++
                         }
                     }
