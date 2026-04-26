@@ -72,6 +72,7 @@ class DataSyncRepositoryImpl @Inject constructor(
         try {
             var tablesCreated = 0
             var tablesUpdated = 0
+            var tablesFailed = 0
 
             // Use transaction for atomic operations
             withContext(Dispatchers.IO) {
@@ -87,22 +88,43 @@ class DataSyncRepositoryImpl @Inject constructor(
                             tablesUpdated++
                         } else {
                             // Create new table using API SQL if available
-                            dynamicTableDao.createTable(schema.tableName, schema.columns, schema.queryCreacion)
-                            tablesCreated++
+                            val created = dynamicTableDao.createTable(
+                                schema.tableName,
+                                schema.columns,
+                                schema.queryCreacion
+                            )
+                            
+                            if (created) {
+                                tablesCreated++
+                            } else {
+                                tablesFailed++
+                            }
                         }
                     }
                 }
             }
 
-            emit(
-                Result.Success(
-                    SyncResult(
-                        tablesCreated = tablesCreated,
-                        tablesUpdated = tablesUpdated,
-                        success = true,
+            // If any tables failed to create, report error
+            if (tablesFailed > 0) {
+                emit(
+                    Result.Error(
+                        AppError.DatabaseError(
+                            message = "Failed to create $tablesFailed of ${schemas.size} tables during sync",
+                            cause = null,
+                        ),
                     ),
-                ),
-            )
+                )
+            } else {
+                emit(
+                    Result.Success(
+                        SyncResult(
+                            tablesCreated = tablesCreated,
+                            tablesUpdated = tablesUpdated,
+                            success = true,
+                        ),
+                    ),
+                )
+            }
         } catch (e: Exception) {
             emit(
                 Result.Error(
