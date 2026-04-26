@@ -318,8 +318,9 @@ class DataSyncRepositoryImplTest {
         assert(error is AppError.DatabaseError) {
             "Should be DatabaseError"
         }
-        assert(error.message.contains("Failed to create 1")) {
-            "Error message should indicate 1 table failed"
+        val dbError = error as AppError.DatabaseError
+        assert(dbError.message.contains("Failed to create 1")) {
+            "Error message should indicate 1 table failed, got: ${dbError.message}"
         }
     }
 
@@ -358,8 +359,9 @@ class DataSyncRepositoryImplTest {
         assert(error is AppError.DatabaseError) {
             "Should be DatabaseError"
         }
-        assert(error.message.contains("Failed to create 1 of 3 tables")) {
-            "Error message should indicate 1 of 3 tables failed, got: ${error.message}"
+        val dbError = error as AppError.DatabaseError
+        assert(dbError.message.contains("Failed to create 1 of 3 tables")) {
+            "Error message should indicate 1 of 3 tables failed, got: ${dbError.message}"
         }
     }
 
