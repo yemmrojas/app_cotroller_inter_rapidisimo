@@ -207,7 +207,7 @@ class AuthRepositoryImplTest {
 
 
     @Test
-    fun `property - login with API returning blank name should return validation error`() =
+    fun `property - login with API returning null name should succeed`() =
         runTest {
             checkAll(
                 iterations = 50,
@@ -217,12 +217,14 @@ class AuthRepositoryImplTest {
                 val authResponseDto = AuthResponseDto(
                     username = "testUser",
                     identification = "123456",
-                    name = "",
+                    name = null,  // API can return null for name
                 )
+
+                val (mockUserDao, capturedEntities) = providesUserDaoWithCapture()
 
                 val sut = providesSut(
                     networkHandler = providesNetworkHandler(Result.Success(authResponseDto)),
-                    userDao = providesUserDao(),
+                    userDao = mockUserDao,
                 )
 
                 // When
@@ -234,12 +236,15 @@ class AuthRepositoryImplTest {
                 ).collect { result = it }
 
                 // Then
-                assert(result is Result.Error) {
-                    "Should return error for blank name in response"
+                assert(result is Result.Success) {
+                    "Should succeed even when name is null (API returns null for many fields)"
                 }
-                val error = (result as Result.Error).error
-                assert(error is AppError.ValidationError) {
-                    "Should be ValidationError"
+                val session = (result as Result.Success).data
+                assert(session.username == "testUser") {
+                    "Username should be preserved"
+                }
+                assert(session.name == "") {
+                    "Name should be empty string when API returns null"
                 }
             }
         }
@@ -810,8 +815,8 @@ class AuthRepositoryImplTest {
                 val input = firstArg<AuthResponseDto>()
                 AuthResponse(
                     username = input.username,
-                    identification = input.identification,
-                    name = input.name,
+                    identification = input.identification ?: "",
+                    name = input.name ?: "",
                     token = null,
                 )
             }

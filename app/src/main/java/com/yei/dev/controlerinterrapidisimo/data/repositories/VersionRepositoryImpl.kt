@@ -2,6 +2,7 @@ package com.yei.dev.controlerinterrapidisimo.data.repositories
 
 import com.yei.dev.controlerinterrapidisimo.data.remote.NetworkHandler
 import com.yei.dev.controlerinterrapidisimo.data.remote.api.VersionApiService
+import com.yei.dev.controlerinterrapidisimo.domain.models.AppError
 import com.yei.dev.controlerinterrapidisimo.domain.models.Result
 import com.yei.dev.controlerinterrapidisimo.domain.models.VersionStatus
 import com.yei.dev.controlerinterrapidisimo.domain.repositories.VersionRepository
@@ -22,25 +23,33 @@ class VersionRepositoryImpl @Inject constructor(
 ) : VersionRepository {
 
     override fun checkVersion(localVersion: String): Flow<Result<VersionStatus>> = flow {
-        val result = networkHandler.safeApiCall {
-            apiService.getCurrentVersion()
-        }
+        try {
+            val result = networkHandler.safeApiCall {
+                apiService.getCurrentVersion()
+            }
 
-        when (result) {
-            is Result.Success -> {
-                val apiVersion = result.data.version
-                val comparisonStatus = compareVersions(localVersion, apiVersion)
-                emit(
-                    Result.Success(
-                        VersionStatus(
-                            localVersion = localVersion,
-                            apiVersion = apiVersion,
-                            status = comparisonStatus
+            when (result) {
+                is Result.Success -> {
+                    // The API returns a simple string like "100" (with quotes included)
+                    // Clean the version by removing quotes and trimming whitespace
+                    val apiVersion = result.data.trim().removeSurrounding("\"")
+                    val comparisonStatus = compareVersions(localVersion, apiVersion)
+                    emit(
+                        Result.Success(
+                            VersionStatus(
+                                localVersion = localVersion,
+                                apiVersion = apiVersion,
+                                status = comparisonStatus
+                            )
                         )
                     )
-                )
+                }
+                is Result.Error -> {
+                    emit(Result.Error(result.error))
+                }
             }
-            is Result.Error -> emit(result)
+        } catch (e: Exception) {
+            emit(Result.Error(AppError.UnknownError("Version check failed: ${e.message}", e)))
         }
     }
 }

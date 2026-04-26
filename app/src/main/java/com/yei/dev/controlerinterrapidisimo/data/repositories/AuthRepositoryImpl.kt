@@ -12,6 +12,7 @@ import com.yei.dev.controlerinterrapidisimo.domain.models.AuthResponse
 import com.yei.dev.controlerinterrapidisimo.domain.models.Result
 import com.yei.dev.controlerinterrapidisimo.domain.models.UserSession
 import com.yei.dev.controlerinterrapidisimo.domain.repositories.AuthRepository
+import com.yei.dev.controlerinterrapidisimo.domain.utils.cleanCredential
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -49,23 +50,27 @@ class AuthRepositoryImpl @Inject constructor(
             return@flow
         }
 
+        // Clean credentials by removing newlines and trimming
+        val cleanUsername = username.cleanCredential()
+        val cleanPassword = password.cleanCredential()
+
         // Authenticate with remote service
         val authResult = networkHandler.safeApiCall {
             apiService.authenticateUser(
-                usuario = username,
-                identificacion = username,
+                usuario = cleanUsername,
+                identificacion = IDENTIFICATION,
                 accept = HEADER_ACCEPT_JSON,
-                idUsuario = DEFAULT_ID_USUARIO,
+                idUsuario = cleanUsername,
                 idCentroServicio = DEFAULT_ID_CENTRO_SERVICIO,
-                nombreCentroServicio = APP_NAME,
+                nombreCentroServicio = DEFAULT_NOMBRE_CENTRO_SERVICIO,
                 idAplicativoOrigen = DEFAULT_ID_APLICATIVO_ORIGEN,
                 contentType = HEADER_CONTENT_TYPE_JSON,
                 request = AuthRequestDto(
                     mac = mac,
                     nomApplication = APP_NAME,
-                    password = password,
+                    password = cleanPassword,
                     path = EMPTY_PATH,
-                    user = username,
+                    user = cleanUsername,
                 ),
             )
         }
@@ -75,15 +80,13 @@ class AuthRepositoryImpl @Inject constructor(
                 val authResponse = authResponseConverter.convert(authResult.data)
                 val userSession = authResponse.toUserSession()
 
-                // Validate user session data
-                if (userSession.username.isBlank() ||
-                    userSession.name.isBlank()
-                ) {
+                // Validate user session data - only username is required
+                if (userSession.username.isBlank()) {
                     emit(
                         Result.Error(
                             AppError.ValidationError(
                                 field = FIELD_USER,
-                                message = MESSAGE_EMPTY_USER_FIELDS,
+                                message = "Username cannot be empty",
                             ),
                         ),
                     )
@@ -151,12 +154,13 @@ class AuthRepositoryImpl @Inject constructor(
         const val MESSAGE_FAILED_SAVE_SESSION = "Failed to save user session"
         const val MESSAGE_FAILED_RETRIEVE_SESSION = "Failed to retrieve user session"
         const val MESSAGE_FAILED_CLEAR_SESSION = "Failed to clear user session"
-        const val HEADER_ACCEPT_JSON = "application/json"
+        const val HEADER_ACCEPT_JSON = "text/json"
         const val HEADER_CONTENT_TYPE_JSON = "application/json"
-        const val DEFAULT_ID_USUARIO = "0"
-        const val DEFAULT_ID_CENTRO_SERVICIO = "0"
-        const val DEFAULT_ID_APLICATIVO_ORIGEN = "1"
-        const val APP_NAME = "ControllerApp"
+        const val DEFAULT_ID_CENTRO_SERVICIO = "1295"
+        const val DEFAULT_NOMBRE_CENTRO_SERVICIO = "PTO/BOGOTA/CUND/COL/OF PRINCIPAL - CRA 30 # 7-45"
+        const val DEFAULT_ID_APLICATIVO_ORIGEN = "9"
+        const val APP_NAME = "Controller APP"
+        const val IDENTIFICATION = "987204545"
         const val EMPTY_PATH = ""
     }
 }

@@ -2,11 +2,9 @@ package com.yei.dev.controlerinterrapidisimo.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.yei.dev.controlerinterrapidisimo.domain.models.AppError
 import com.yei.dev.controlerinterrapidisimo.domain.models.HomeState
 import com.yei.dev.controlerinterrapidisimo.domain.models.Result
 import com.yei.dev.controlerinterrapidisimo.domain.models.SyncStatus
-import com.yei.dev.controlerinterrapidisimo.domain.models.UserSession
 import com.yei.dev.controlerinterrapidisimo.domain.usecases.GetUserSessionUseCase
 import com.yei.dev.controlerinterrapidisimo.domain.usecases.LogoutUseCase
 import com.yei.dev.controlerinterrapidisimo.domain.usecases.SyncDatabaseUseCase
@@ -31,7 +29,7 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val getUserSessionUseCase: GetUserSessionUseCase,
     private val syncDatabaseUseCase: SyncDatabaseUseCase,
-    private val logoutUseCase: LogoutUseCase
+    private val logoutUseCase: LogoutUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow<HomeState>(HomeState.Loading)
     val state: StateFlow<HomeState> = _state.asStateFlow()
@@ -53,16 +51,17 @@ class HomeViewModel @Inject constructor(
                             // User session exists, update state with success
                             _state.value = HomeState.Success(
                                 userSession = userSession,
-                                syncStatus = currentSyncStatus
+                                syncStatus = currentSyncStatus,
                             )
                         } else {
                             // No user session, this should not happen on home screen
                             _state.value = HomeState.Error("No user session found")
                         }
                     }
+
                     is Result.Error -> {
                         _state.value = HomeState.Error(
-                            "Failed to load user data: ${sessionResult.error}"
+                            "Failed to load user data: ${sessionResult.error}",
                         )
                     }
                 }
@@ -89,6 +88,7 @@ class HomeViewModel @Inject constructor(
                         }
                         updateStateWithCurrentSyncStatus()
                     }
+
                     is Result.Error -> {
                         currentSyncStatus = SyncStatus.FAILED
                         updateStateWithCurrentSyncStatus()
@@ -109,10 +109,11 @@ class HomeViewModel @Inject constructor(
                         // Logout successful, state will be handled by navigation
                         // The screen should navigate to login
                     }
+
                     is Result.Error -> {
                         // Logout failed, show error
                         _state.value = HomeState.Error(
-                            "Logout failed: ${logoutResult.error}"
+                            "Logout failed: ${logoutResult.error}",
                         )
                     }
                 }
@@ -129,9 +130,11 @@ class HomeViewModel @Inject constructor(
             is HomeState.Success -> {
                 _state.value = currentState.copy(syncStatus = currentSyncStatus)
             }
+
             is HomeState.Loading -> {
                 // If still loading, sync status update will happen when Success state is set
             }
+
             is HomeState.Error -> {
                 // If in error state, sync status is not relevant
             }

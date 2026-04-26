@@ -17,7 +17,7 @@ android {
         minSdk = 24
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -73,6 +73,7 @@ dependencies {
     // Retrofit
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization.converter)
+    implementation(libs.retrofit.converter.scalars)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
 

@@ -238,6 +238,33 @@ class LoginViewModelTest {
         }
     }
 
+    @Test
+    fun `dismissError should transition from error state to idle state`() = runTest {
+        // Given
+        val sut = providesSut(
+            loginUserUseCase = providesLoginUserUseCase(
+                Result.Error(AppError.NetworkError("No internet connection")),
+            ),
+        )
+
+        // When - trigger error state
+        sut.login("user", "pass")
+        advanceUntilIdle()
+
+        // Verify error state
+        assert(sut.state.value is LoginState.Error) {
+            "State should be Error after failed login"
+        }
+
+        // When - dismiss error
+        sut.dismissError()
+
+        // Then
+        assert(sut.state.value is LoginState.Idle) {
+            "State should be Idle after dismissError"
+        }
+    }
+
     // ========== PROVIDER METHODS ==========
 
     companion object {

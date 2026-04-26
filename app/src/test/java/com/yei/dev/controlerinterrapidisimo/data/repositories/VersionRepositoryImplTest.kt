@@ -2,7 +2,6 @@ package com.yei.dev.controlerinterrapidisimo.data.repositories
 
 import com.yei.dev.controlerinterrapidisimo.data.remote.NetworkHandler
 import com.yei.dev.controlerinterrapidisimo.data.remote.api.VersionApiService
-import com.yei.dev.controlerinterrapidisimo.data.remote.dto.VersionResponseDto
 import com.yei.dev.controlerinterrapidisimo.domain.models.AppError
 import com.yei.dev.controlerinterrapidisimo.domain.models.Result
 import com.yei.dev.controlerinterrapidisimo.domain.models.VersionStatus
@@ -37,9 +36,9 @@ class VersionRepositoryImplTest {
             providesVersionScenarios(),
         ) { scenario ->
             // Given
-            val versionDto = VersionResponseDto(version = scenario.apiVersion)
+            val apiVersionString = scenario.apiVersion
             val sut = providesSut(
-                networkHandler = providesNetworkHandler(Result.Success(versionDto)),
+                networkHandler = providesNetworkHandler(Result.Success(apiVersionString)),
             )
 
             // When
@@ -152,8 +151,8 @@ class VersionRepositoryImplTest {
         /**
          * Provides a NetworkHandler mock.
          */
-        private fun providesNetworkHandler(result: Result<VersionResponseDto>) = mockk<NetworkHandler>().apply {
-            coEvery { safeApiCall<VersionResponseDto>(any()) } returns result
+        private fun providesNetworkHandler(result: Result<String>) = mockk<NetworkHandler>().apply {
+            coEvery { safeApiCall<String>(any()) } returns result
         }
     }
 

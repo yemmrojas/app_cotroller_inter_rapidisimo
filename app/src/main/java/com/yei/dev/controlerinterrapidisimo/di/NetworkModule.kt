@@ -18,7 +18,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import retrofit2.converter.scalars.ScalarsConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 /**
@@ -34,7 +36,14 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "https://api.interrapidisimo.com/"
+    // OFFICIAL API ENDPOINTS FROM DOCUMENTATION:
+    // Based on the official document, we have different base URLs for different services:
+    // - Version Control & Data Sync & Localities: https://apitesting.interrapidisimo.co/apicontrollerpruebas/
+    // - Authentication: https://apitesting.interrapidisimo.co/FtEntregaElectronica/MultiCanales/ApiSeguridadPruebas/
+    //
+    // For now using the main API base URL. Auth service will need special handling.
+    // TODO: Consider using different Retrofit instances for different base URLs
+    private const val BASE_URL = "https://apitesting.interrapidisimo.co/"
     private const val TIMEOUT_SECONDS = 30L
 
     /**
@@ -77,7 +86,7 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(
         jsonParsingInterceptor: JsonParsingInterceptor,
-        loggingInterceptor: HttpLoggingInterceptor
+        loggingInterceptor: HttpLoggingInterceptor,
     ): OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(jsonParsingInterceptor)
         .addInterceptor(loggingInterceptor)
@@ -87,17 +96,36 @@ object NetworkModule {
         .build()
 
     /**
-     * Provides configured Retrofit instance.
+     * Provides configured Retrofit instance for main API services.
+     * Includes both Scalars converter (for simple string responses) and JSON converter.
      */
     @Provides
     @Singleton
     fun provideRetrofit(
         okHttpClient: OkHttpClient,
-        json: Json
+        json: Json,
     ): Retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(okHttpClient)
-        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .addConverterFactory(ScalarsConverterFactory.create()) // For simple string responses
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType())) // For JSON responses
+        .build()
+
+    /**
+     * Provides configured Retrofit instance for authentication service.
+     * Uses different base URL as specified in the official documentation.
+     */
+    @Provides
+    @Singleton
+    @Named("auth")
+    fun provideAuthRetrofit(
+        okHttpClient: OkHttpClient,
+        json: Json,
+    ): Retrofit = Retrofit.Builder()
+        .baseUrl(BASE_URL)
+        .client(okHttpClient)
+        .addConverterFactory(ScalarsConverterFactory.create()) // For simple string responses
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType())) // For JSON responses
         .build()
 
     /**
@@ -109,11 +137,11 @@ object NetworkModule {
         retrofit.create(VersionApiService::class.java)
 
     /**
-     * Provides AuthApiService instance.
+     * Provides AuthApiService instance using the authentication Retrofit instance.
      */
     @Provides
     @Singleton
-    fun provideAuthApiService(retrofit: Retrofit): AuthApiService =
+    fun provideAuthApiService(@Named("auth") retrofit: Retrofit): AuthApiService =
         retrofit.create(AuthApiService::class.java)
 
     /**
@@ -138,6 +166,6 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideNetworkHandler(
-        @ApplicationContext context: Context
+        @ApplicationContext context: Context,
     ): NetworkHandler = NetworkHandler(context)
 }

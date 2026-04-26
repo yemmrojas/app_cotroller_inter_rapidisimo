@@ -1,6 +1,5 @@
 package com.yei.dev.controlerinterrapidisimo.data.remote.api
 
-import com.yei.dev.controlerinterrapidisimo.data.remote.dto.VersionResponseDto
 import retrofit2.Response
 import retrofit2.http.GET
 
@@ -15,9 +14,12 @@ interface VersionApiService {
      * Retrieves the current application version from the remote service.
      *
      * Endpoint: GET /api/ParametrosFramework/ConsultarParametrosFramework/VPStoreAppControl
+     * Official URL: https://apitesting.interrapidisimo.co/apicontrollerpruebas/api/ParametrosFramework/ConsultarParametrosFramework/VPStoreAppControl
      *
-     * @return Response containing VersionResponseDto with the current version
+     * Note: This endpoint returns a simple string (e.g., "100") not a JSON object.
+     *
+     * @return Response containing the version as a String
      */
-    @GET("api/ParametrosFramework/ConsultarParametrosFramework/VPStoreAppControl")
-    suspend fun getCurrentVersion(): Response<VersionResponseDto>
+    @GET("apicontrollerpruebas/api/ParametrosFramework/ConsultarParametrosFramework/VPStoreAppControl")
+    suspend fun getCurrentVersion(): Response<String>
 }

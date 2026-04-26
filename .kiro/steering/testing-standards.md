@@ -605,9 +605,9 @@ Is this logic implemented IN this class?
 fun `property - checkVersion should return VersionStatus with API data`() = runTest {
     checkAll(iterations = 100, providesVersionScenarios()) { scenario ->
         // Given
-        val versionDto = VersionResponseDto(version = scenario.apiVersion)
+        val apiVersionString = scenario.apiVersion
         val sut = providesSut(
-            networkHandler = providesNetworkHandler(Result.Success(versionDto)),
+            networkHandler = providesNetworkHandler(Result.Success(apiVersionString)),
         )
 
         // When

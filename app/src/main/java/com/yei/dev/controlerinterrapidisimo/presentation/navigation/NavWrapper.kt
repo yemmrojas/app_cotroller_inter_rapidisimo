@@ -15,18 +15,18 @@ import com.yei.dev.controlerinterrapidisimo.presentation.screens.tables.TablesSc
 /**
  * Main navigation wrapper for the application.
  * Uses Navigation 3 with entryProvider and serializable routes.
- * 
+ *
  * @param modifier Modifier to be applied to the NavDisplay
  */
 @Composable
 fun NavWrapper(modifier: Modifier = Modifier) {
     val backStack = rememberNavBackStack(Routes.Splash)
-    
+
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
         entryProvider = entryProvider {
-            
+
             // Splash Screen - Version check and session restoration
             entry<Routes.Splash> {
                 SplashScreen(
@@ -38,13 +38,10 @@ fun NavWrapper(modifier: Modifier = Modifier) {
                     }
                 )
             }
-            
+
             // Login Screen - User authentication
             entry<Routes.Login> {
                 LoginScreen(
-                    onBackClick = {
-                        backStack.removeLastOrNull()
-                    },
                     onLoginSuccess = {
                         // Clear back stack and navigate to home
                         backStack.clear()
@@ -52,13 +49,10 @@ fun NavWrapper(modifier: Modifier = Modifier) {
                     }
                 )
             }
-            
+
             // Home Screen - Main screen with user info and navigation options
             entry<Routes.Home> {
                 HomeScreen(
-                    onBackClick = {
-                        backStack.removeLastOrNull()
-                    },
                     onNavigateToTables = {
                         backStack.add(Routes.Tables)
                     },
@@ -72,7 +66,7 @@ fun NavWrapper(modifier: Modifier = Modifier) {
                     }
                 )
             }
-            
+
             // Tables Screen - List of synchronized tables
             entry<Routes.Tables> {
                 TablesScreen(
@@ -84,7 +78,7 @@ fun NavWrapper(modifier: Modifier = Modifier) {
                     }
                 )
             }
-            
+
             // Table Detail Screen - Display data for a specific table
             entry<Routes.TableDetail> { route ->
                 TableDetailScreen(
@@ -94,7 +88,7 @@ fun NavWrapper(modifier: Modifier = Modifier) {
                     }
                 )
             }
-            
+
             // Localities Screen - List of localities
             entry<Routes.Localities> {
                 LocalitiesScreen(
