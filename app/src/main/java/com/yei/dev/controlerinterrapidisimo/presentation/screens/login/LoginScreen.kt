@@ -69,8 +69,8 @@ fun LoginScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
 
-    var userName by remember { mutableStateOf("cGFtLm1lcmVkeTIx") }
-    var password by remember { mutableStateOf("SW50ZXIyMDIx") }
+    var userName by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
     // Handle navigation on successful login
