@@ -204,8 +204,11 @@ private fun TableDataView(
     tableName: String,
     data: List<Map<String, Any?>>
 ) {
-    // Get all column names from the first row
-    val columns = data.firstOrNull()?.keys?.toList() ?: emptyList()
+    // Get all unique column names from all rows to handle variable/sparse schemas
+    val columns = data
+        .flatMap { it.keys }
+        .distinct()
+        .sorted()
 
     Column(
         modifier = Modifier

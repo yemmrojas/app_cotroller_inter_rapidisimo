@@ -126,11 +126,17 @@ class SplashViewModel @Inject constructor(
     }
 
     /**
-     * Dismisses the current error or version mismatch state.
-     * Returns to loading state.
+     * Dismisses the current error or version mismatch state and retries the check.
+     *
+     * When a user dismisses an error dialog, this method:
+     * 1. Sets state back to Loading
+     * 2. Re-runs checkVersionAndSession() to allow retry
+     *
+     * This ensures users are not stuck on a loading screen after dismissing an error.
      */
     fun dismissError() {
         _state.value = SplashState.Loading
+        checkVersionAndSession()
     }
 
     internal companion object {
