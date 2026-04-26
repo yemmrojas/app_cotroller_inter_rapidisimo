@@ -205,6 +205,7 @@ fun SplashScreen(
                             )
                         }
                     }
+
                     else -> {
                         // Navigation states - show loading
                         Row(
@@ -236,7 +237,8 @@ fun SplashScreen(
                 // Loading indicator - only show when loading or navigating
                 if (state is SplashState.Loading ||
                     state is SplashState.NavigateToLogin ||
-                    state is SplashState.NavigateToHome) {
+                    state is SplashState.NavigateToHome
+                ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = colorResource(R.color.orange),

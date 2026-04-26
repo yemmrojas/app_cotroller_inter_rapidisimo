@@ -8,6 +8,7 @@ import com.yei.dev.controlerinterrapidisimo.domain.models.VersionStatus
 import com.yei.dev.controlerinterrapidisimo.domain.repositories.VersionRepository
 import com.yei.dev.controlerinterrapidisimo.domain.utils.compareVersions
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
@@ -23,33 +24,29 @@ class VersionRepositoryImpl @Inject constructor(
 ) : VersionRepository {
 
     override fun checkVersion(localVersion: String): Flow<Result<VersionStatus>> = flow {
-        try {
-            val result = networkHandler.safeApiCall {
-                apiService.getCurrentVersion()
-            }
+        val result = networkHandler.safeApiCall {
+            apiService.getCurrentVersion()
+        }
 
-            when (result) {
-                is Result.Success -> {
-                    // The API returns a simple string like "100" (with quotes included)
-                    // Clean the version by removing quotes and trimming whitespace
-                    val apiVersion = result.data.trim().removeSurrounding("\"")
-                    val comparisonStatus = compareVersions(localVersion, apiVersion)
-                    emit(
-                        Result.Success(
-                            VersionStatus(
-                                localVersion = localVersion,
-                                apiVersion = apiVersion,
-                                status = comparisonStatus
-                            )
+        when (result) {
+            is Result.Success -> {
+                val apiVersion = result.data.trim().removeSurrounding("\"")
+                val comparisonStatus = compareVersions(localVersion, apiVersion)
+                emit(
+                    Result.Success(
+                        VersionStatus(
+                            localVersion = localVersion,
+                            apiVersion = apiVersion,
+                            status = comparisonStatus
                         )
                     )
-                }
-                is Result.Error -> {
-                    emit(Result.Error(result.error))
-                }
+                )
             }
-        } catch (e: Exception) {
-            emit(Result.Error(AppError.UnknownError("Version check failed: ${e.message}", e)))
+            is Result.Error -> {
+                emit(Result.Error(result.error))
+            }
         }
+    }.catch { e ->
+        emit(Result.Error(AppError.UnknownError("Version check failed: ${e.message}", e)))
     }
 }

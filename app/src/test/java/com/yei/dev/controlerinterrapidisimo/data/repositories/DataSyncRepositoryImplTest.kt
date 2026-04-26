@@ -33,98 +33,54 @@ import org.junit.Test
  * Property-based and unit tests for DataSyncRepositoryImpl.
  *
  * Tests all methods of DataSyncRepositoryImpl:
- * - syncDatabase() with various scenarios
+ * - fetchDatabaseSchema() with various scenarios
+ * - syncTables() with various scenarios
  * - getAllTables() with various scenarios
  * - getTableData() with various scenarios
  */
 class DataSyncRepositoryImplTest {
 
-    // ========== SYNC DATABASE TESTS ==========
+    // ========== FETCH DATABASE SCHEMA TESTS ==========
 
     @Test
-    fun `property - syncDatabase with new tables should create tables and return success`() = runTest {
+    fun `property - fetchDatabaseSchema should return list of table schemas`() = runTest {
         checkAll(
             iterations = 50,
-            providesNewTablesScenarios(),
+            providesSchemaScenarios(),
         ) { scenario ->
             // Given
             val schemaDto = SchemaResponseDto(tables = scenario.tableDtos)
-            val mockDao = providesDynamicTableDao(existingTables = emptyList())
-            val mockDatabase = providesAppDatabase(mockDao)
-
             val sut = providesSut(
                 networkHandler = providesNetworkHandler(Result.Success(schemaDto)),
-                database = mockDatabase,
-                dynamicTableDao = mockDao,
+                database = providesAppDatabase(providesDynamicTableDao()),
+                dynamicTableDao = providesDynamicTableDao(),
             )
 
             // When
-            var result: Result<SyncResult>? = null
-            sut.syncDatabase().collect { result = it }
+            var result: Result<List<TableSchema>>? = null
+            sut.fetchDatabaseSchema().collect { result = it }
 
             // Then
             assert(result is Result.Success) {
                 "Should return success for valid schema"
             }
-            val syncResult = (result as Result.Success).data
-            assert(syncResult.success) {
-                "Sync should be successful"
+            val schemas = (result as Result.Success).data
+            assert(schemas.size == scenario.tableDtos.size) {
+                "Should return ${scenario.tableDtos.size} schemas, got ${schemas.size}"
             }
-            assert(syncResult.tablesCreated == scenario.tableDtos.size) {
-                "Should create ${scenario.tableDtos.size} tables, got ${syncResult.tablesCreated}"
-            }
-            assert(syncResult.tablesUpdated == 0) {
-                "Should not update any tables for new tables"
-            }
-
-            // Verify createTable was called for each table
-            scenario.tableDtos.forEach { tableDto ->
-                verify { mockDao.createTable(tableDto.tableName, any()) }
+            schemas.forEachIndexed { index, schema ->
+                assert(schema.tableName == scenario.tableDtos[index].tableName) {
+                    "Table name should match at index $index"
+                }
+                assert(schema.columns.size == scenario.tableDtos[index].columns.size) {
+                    "Column count should match at index $index"
+                }
             }
         }
     }
 
     @Test
-    fun `property - syncDatabase with existing tables should update tables and return success`() = runTest {
-        checkAll(
-            iterations = 50,
-            providesExistingTablesScenarios(),
-        ) { scenario ->
-            // Given
-            val schemaDto = SchemaResponseDto(tables = scenario.tableDtos)
-            val existingTableNames = scenario.tableDtos.map { it.tableName }
-            val mockDao = providesDynamicTableDao(existingTables = existingTableNames)
-            val mockDatabase = providesAppDatabase(mockDao)
-
-            val sut = providesSut(
-                networkHandler = providesNetworkHandler(Result.Success(schemaDto)),
-                database = mockDatabase,
-                dynamicTableDao = mockDao,
-            )
-
-            // When
-            var result: Result<SyncResult>? = null
-            sut.syncDatabase().collect { result = it }
-
-            // Then
-            assert(result is Result.Success) {
-                "Should return success for existing tables"
-            }
-            val syncResult = (result as Result.Success).data
-            assert(syncResult.success) {
-                "Sync should be successful"
-            }
-            assert(syncResult.tablesCreated == 0) {
-                "Should not create any tables for existing tables"
-            }
-            assert(syncResult.tablesUpdated == scenario.tableDtos.size) {
-                "Should update ${scenario.tableDtos.size} tables, got ${syncResult.tablesUpdated}"
-            }
-        }
-    }
-
-    @Test
-    fun `syncDatabase with network error should return network error`() = runTest {
+    fun `fetchDatabaseSchema with network error should return network error`() = runTest {
         // Given
         val networkError = AppError.NetworkError("No internet connection")
         val sut = providesSut(
@@ -134,8 +90,8 @@ class DataSyncRepositoryImplTest {
         )
 
         // When
-        var result: Result<SyncResult>? = null
-        sut.syncDatabase().collect { result = it }
+        var result: Result<List<TableSchema>>? = null
+        sut.fetchDatabaseSchema().collect { result = it }
 
         // Then
         assert(result is Result.Error) {
@@ -148,20 +104,127 @@ class DataSyncRepositoryImplTest {
     }
 
     @Test
-    fun `syncDatabase with database error should return database error`() = runTest {
+    fun `fetchDatabaseSchema with empty schema should return empty list`() = runTest {
         // Given
-        val schemaDto = SchemaResponseDto(
-            tables = listOf(
-                TableSchemaDto(
-                    tableName = "test_table",
-                    columns = listOf(
-                        ColumnDefinitionDto(
-                            name = "id",
-                            type = "INTEGER",
-                            nullable = false,
-                            primaryKey = true,
-                        ),
-                    ),
+        val schemaDto = SchemaResponseDto(tables = emptyList())
+        val sut = providesSut(
+            networkHandler = providesNetworkHandler(Result.Success(schemaDto)),
+            database = providesAppDatabase(providesDynamicTableDao()),
+            dynamicTableDao = providesDynamicTableDao(),
+        )
+
+        // When
+        var result: Result<List<TableSchema>>? = null
+        sut.fetchDatabaseSchema().collect { result = it }
+
+        // Then
+        assert(result is Result.Success) {
+            "Should return success even with empty schema"
+        }
+        val schemas = (result as Result.Success).data
+        assert(schemas.isEmpty()) {
+            "Should return empty list"
+        }
+    }
+
+    // ========== SYNC TABLES TESTS ==========
+
+    @Test
+    fun `property - syncTables with new tables should create tables and return success`() = runTest {
+        checkAll(
+            iterations = 50,
+            providesNewTablesScenarios(),
+        ) { scenario ->
+            // Given
+            val mockDao = providesDynamicTableDao(existingTables = emptyList())
+            val mockDatabase = providesAppDatabase(mockDao)
+
+            val sut = providesSut(
+                networkHandler = providesNetworkHandler(Result.Success(mockk())),
+                database = mockDatabase,
+                dynamicTableDao = mockDao,
+            )
+
+            // When
+            var result: Result<SyncResult>? = null
+            sut.syncTables(scenario.schemas).collect { result = it }
+
+            // Then
+            assert(result is Result.Success) {
+                "Should return success for valid schema"
+            }
+            val syncResult = (result as Result.Success).data
+            assert(syncResult.success) {
+                "Sync should be successful"
+            }
+            assert(syncResult.tablesCreated == scenario.schemas.size) {
+                "Should create ${scenario.schemas.size} tables, got ${syncResult.tablesCreated}"
+            }
+            assert(syncResult.tablesUpdated == 0) {
+                "Should not update any tables for new tables"
+            }
+
+            // Verify createTable was called for each table
+            scenario.schemas.forEach { schema ->
+                verify { mockDao.createTable(schema.tableName, any()) }
+            }
+        }
+    }
+
+    @Test
+    fun `property - syncTables with existing tables should update tables and return success`() = runTest {
+        checkAll(
+            iterations = 50,
+            providesExistingTablesScenarios(),
+        ) { scenario ->
+            // Given
+            val existingTableNames = scenario.schemas.map { it.tableName }
+            val mockDao = providesDynamicTableDao(existingTables = existingTableNames)
+            val mockDatabase = providesAppDatabase(mockDao)
+
+            val sut = providesSut(
+                networkHandler = providesNetworkHandler(Result.Success(mockk())),
+                database = mockDatabase,
+                dynamicTableDao = mockDao,
+            )
+
+            // When
+            var result: Result<SyncResult>? = null
+            sut.syncTables(scenario.schemas).collect { result = it }
+
+            // Then
+            assert(result is Result.Success) {
+                "Should return success for existing tables"
+            }
+            val syncResult = (result as Result.Success).data
+            assert(syncResult.success) {
+                "Sync should be successful"
+            }
+            assert(syncResult.tablesCreated == 0) {
+                "Should not create any tables for existing tables"
+            }
+            assert(syncResult.tablesUpdated == scenario.schemas.size) {
+                "Should update ${scenario.schemas.size} tables, got ${syncResult.tablesUpdated}"
+            }
+
+            // Verify updateTableSchema was called for each table
+            scenario.schemas.forEach { schema ->
+                verify { mockDao.updateTableSchema(schema.tableName, any()) }
+            }
+        }
+    }
+
+    @Test
+    fun `syncTables with database error should return database error`() = runTest {
+        // Given
+        val schema = TableSchema(
+            tableName = "test_table",
+            columns = listOf(
+                ColumnDefinition(
+                    name = "id",
+                    type = "INTEGER",
+                    nullable = false,
+                    primaryKey = true,
                 ),
             ),
         )
@@ -169,14 +232,14 @@ class DataSyncRepositoryImplTest {
         val mockDatabase = providesAppDatabase(mockDao)
 
         val sut = providesSut(
-            networkHandler = providesNetworkHandler(Result.Success(schemaDto)),
+            networkHandler = providesNetworkHandler(Result.Success(mockk())),
             database = mockDatabase,
             dynamicTableDao = mockDao,
         )
 
         // When
         var result: Result<SyncResult>? = null
-        sut.syncDatabase().collect { result = it }
+        sut.syncTables(listOf(schema)).collect { result = it }
 
         // Then
         assert(result is Result.Error) {
@@ -185,6 +248,38 @@ class DataSyncRepositoryImplTest {
         val error = (result as Result.Error).error
         assert(error is AppError.DatabaseError) {
             "Should be DatabaseError"
+        }
+    }
+
+    @Test
+    fun `syncTables with empty schemas should return success with zero counts`() = runTest {
+        // Given
+        val mockDao = providesDynamicTableDao()
+        val mockDatabase = providesAppDatabase(mockDao)
+
+        val sut = providesSut(
+            networkHandler = providesNetworkHandler(Result.Success(mockk())),
+            database = mockDatabase,
+            dynamicTableDao = mockDao,
+        )
+
+        // When
+        var result: Result<SyncResult>? = null
+        sut.syncTables(emptyList()).collect { result = it }
+
+        // Then
+        assert(result is Result.Success) {
+            "Should return success even with empty schemas"
+        }
+        val syncResult = (result as Result.Success).data
+        assert(syncResult.tablesCreated == 0) {
+            "Should create 0 tables"
+        }
+        assert(syncResult.tablesUpdated == 0) {
+            "Should update 0 tables"
+        }
+        assert(syncResult.success) {
+            "Sync should be successful"
         }
     }
 
@@ -360,9 +455,9 @@ class DataSyncRepositoryImplTest {
 
     companion object {
         /**
-         * Provides scenarios with new tables.
+         * Provides scenarios with table schemas.
          */
-        private fun providesNewTablesScenarios(): Arb<TablesScenario> = arbitrary {
+        private fun providesSchemaScenarios(): Arb<SchemaScenario> = arbitrary {
             val count = Arb.int(1..5).bind()
             val tables = List(count) {
                 val tableName = Arb.string(minSize = 5, maxSize = 20)
@@ -385,7 +480,36 @@ class DataSyncRepositoryImplTest {
                 )
             }
 
-            TablesScenario(tableDtos = tables)
+            SchemaScenario(tableDtos = tables)
+        }
+
+        /**
+         * Provides scenarios with new tables.
+         */
+        private fun providesNewTablesScenarios(): Arb<TablesScenario> = arbitrary {
+            val count = Arb.int(1..5).bind()
+            val schemas = List(count) {
+                val tableName = Arb.string(minSize = 5, maxSize = 20)
+                    .filter { it.isNotBlank() && it.matches(Regex("[a-z_]+")) }
+                    .bind()
+
+                val columnCount = Arb.int(1..5).bind()
+                val columns = List(columnCount) { index ->
+                    ColumnDefinition(
+                        name = "column_$index",
+                        type = "TEXT",
+                        nullable = Arb.boolean().bind(),
+                        primaryKey = index == 0,
+                    )
+                }
+
+                TableSchema(
+                    tableName = tableName,
+                    columns = columns,
+                )
+            }
+
+            TablesScenario(schemas = schemas)
         }
 
         /**
@@ -393,10 +517,10 @@ class DataSyncRepositoryImplTest {
          */
         private fun providesExistingTablesScenarios(): Arb<TablesScenario> = arbitrary {
             val count = Arb.int(1..5).bind()
-            val tables = List(count) {
+            val schemas = List(count) {
                 val tableName = "existing_table_$it"
                 val columns = listOf(
-                    ColumnDefinitionDto(
+                    ColumnDefinition(
                         name = "id",
                         type = "INTEGER",
                         nullable = false,
@@ -404,13 +528,13 @@ class DataSyncRepositoryImplTest {
                     ),
                 )
 
-                TableSchemaDto(
+                TableSchema(
                     tableName = tableName,
                     columns = columns,
                 )
             }
 
-            TablesScenario(tableDtos = tables)
+            TablesScenario(schemas = schemas)
         }
 
         /**
@@ -504,6 +628,7 @@ class DataSyncRepositoryImplTest {
                     existingTables.contains(tableName)
                 }
                 every { createTable(any(), any()) } returns Unit
+                every { updateTableSchema(any(), any()) } returns Unit
             }
 
         /**
@@ -581,10 +706,17 @@ class DataSyncRepositoryImplTest {
     }
 
     /**
+     * Data class for schema scenarios.
+     */
+    data class SchemaScenario(
+        val tableDtos: List<TableSchemaDto>,
+    )
+
+    /**
      * Data class for tables scenarios.
      */
     data class TablesScenario(
-        val tableDtos: List<TableSchemaDto>,
+        val schemas: List<TableSchema>,
     )
 
     /**

@@ -12,6 +12,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -45,42 +46,41 @@ class SplashViewModel @Inject constructor(
     fun checkVersionAndSession() {
         viewModelScope.launch {
             // First check version
-            val versionResult = checkVersionUseCase()
-            versionResult.collect { versionCheckResult ->
-                when (versionCheckResult) {
-                    is Result.Success -> {
-                        val versionStatus = versionCheckResult.data
-                        when (versionStatus.status) {
-                            VersionComparisonStatus.UP_TO_DATE -> {
-                                // Version is current, check for user session
-                                checkUserSession()
-                            }
+            val versionResult = checkVersionUseCase().first()
+            when (versionResult) {
+                is Result.Success -> {
+                    val versionStatus = versionResult.data
+                    when (versionStatus.status) {
+                        VersionComparisonStatus.UP_TO_DATE -> {
+                            // Version is current, check for user session
+                            checkUserSession()
+                        }
 
-                            VersionComparisonStatus.UPDATE_NEEDED -> {
-                                _state.value = SplashState.VersionMismatch(
-                                    MESSAGE_UPDATE_NEEDED.format(
-                                        versionStatus.localVersion, versionStatus.apiVersion,
-                                    ),
-                                )
-                            }
+                        VersionComparisonStatus.UPDATE_NEEDED -> {
+                            _state.value = SplashState.VersionMismatch(
+                                MESSAGE_UPDATE_NEEDED.format(
+                                    versionStatus.localVersion, versionStatus.apiVersion,
+                                ),
+                            )
+                        }
 
-                            VersionComparisonStatus.AHEAD_OF_SERVER -> {
-                                _state.value = SplashState.VersionMismatch(
-                                    MESSAGE_AHEAD_OF_SERVER.format(
-                                        versionStatus.localVersion, versionStatus.apiVersion,
-                                    ),
-                                )
-                            }
+                        VersionComparisonStatus.AHEAD_OF_SERVER -> {
+                            _state.value = SplashState.VersionMismatch(
+                                MESSAGE_AHEAD_OF_SERVER.format(
+                                    versionStatus.localVersion, versionStatus.apiVersion,
+                                ),
+                            )
                         }
                     }
+                }
 
-                    is Result.Error -> {
-                        _state.value = SplashState.Error(
-                            formatErrorMessage(versionCheckResult.error),
-                        )
-                    }
+                is Result.Error -> {
+                    _state.value = SplashState.Error(
+                        formatErrorMessage(versionResult.error),
+                    )
                 }
             }
+
         }
     }
 
@@ -89,27 +89,27 @@ class SplashViewModel @Inject constructor(
      */
     private fun checkUserSession() {
         viewModelScope.launch {
-            getUserSessionUseCase().collect { sessionResult ->
-                when (sessionResult) {
-                    is Result.Success -> {
-                        val userSession = sessionResult.data
-                        if (userSession != null) {
-                            // User session exists, navigate to home
-                            _state.value = SplashState.NavigateToHome
-                        } else {
-                            // No user session, navigate to login
-                            _state.value = SplashState.NavigateToLogin
-                        }
+            val sessionResult = getUserSessionUseCase().first()
+            when (sessionResult) {
+                is Result.Success -> {
+                    val userSession = sessionResult.data
+                    if (userSession != null) {
+                        // User session exists, navigate to home
+                        _state.value = SplashState.NavigateToHome
+                    } else {
+                        // No user session, navigate to login
+                        _state.value = SplashState.NavigateToLogin
                     }
+                }
 
-                    is Result.Error -> {
-                        _state.value = SplashState.Error(
-                            formatErrorMessage(sessionResult.error),
-                        )
-                    }
+                is Result.Error -> {
+                    _state.value = SplashState.Error(
+                        formatErrorMessage(sessionResult.error),
+                    )
                 }
             }
         }
+
     }
 
     /**
@@ -117,11 +117,11 @@ class SplashViewModel @Inject constructor(
      */
     private fun formatErrorMessage(error: AppError): String {
         return when (error) {
-            is AppError.NetworkError -> "No se pudo conectar con el servidor. Verifica tu conexión a internet."
-            is AppError.ApiError -> "Error del servidor (${error.statusCode}). Intenta nuevamente más tarde."
-            is AppError.DatabaseError -> "Error al acceder a los datos locales. Intenta reiniciar la aplicación."
-            is AppError.ValidationError -> "Error de validación: ${error.message}"
-            is AppError.UnknownError -> "Ocurrió un error inesperado. Intenta nuevamente."
+            is AppError.NetworkError -> "Version check failed: No se pudo conectar con el servidor. Verifica tu conexión a internet."
+            is AppError.ApiError -> "Version check failed: Error del servidor (${error.statusCode}). Intenta nuevamente más tarde."
+            is AppError.DatabaseError -> "Version check failed: Error al acceder a los datos locales. Intenta reiniciar la aplicación."
+            is AppError.ValidationError -> "Version check failed: Error de validación: ${error.message}"
+            is AppError.UnknownError -> "Version check failed: Ocurrió un error inesperado. Intenta nuevamente."
         }
     }
 

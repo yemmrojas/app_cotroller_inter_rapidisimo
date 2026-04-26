@@ -44,8 +44,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yei.dev.controlerinterrapidisimo.R
-import com.yei.dev.controlerinterrapidisimo.domain.models.Locality
 import com.yei.dev.controlerinterrapidisimo.domain.models.LocalitiesState
+import com.yei.dev.controlerinterrapidisimo.domain.models.Locality
 import com.yei.dev.controlerinterrapidisimo.presentation.viewmodels.LocalitiesViewModel
 
 /**

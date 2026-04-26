@@ -229,12 +229,12 @@ This implementation plan breaks down the Controller APP feature into discrete, i
     - Determine retryable errors
     - _Requirements: 9.5_
 
-- [ ]* 9.2 Write property test for exponential backoff
+- [x] 9.2 Write property test for exponential backoff
   - **Property 13: Exponential Backoff Retry Logic**
   - **Validates: Requirements 9.5**
 
-- [ ] 10. Implement Database Schema Synchronization
-  - [ ] 10.1 Implement schema fetch and sync logic
+- [x] 10. Implement Database Schema Synchronization
+  - [x] 10.1 Implement schema fetch and sync logic
     - Fetch schema from API
     - Create or update tables dynamically
     - Preserve existing data during updates

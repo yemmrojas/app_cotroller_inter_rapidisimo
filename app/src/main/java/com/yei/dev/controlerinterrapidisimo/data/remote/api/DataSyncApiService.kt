@@ -20,7 +20,7 @@ interface DataSyncApiService {
      * @param usuario Username header for authentication
      * @return Response containing SchemaResponseDto with table definitions
      */
-    @GET("api/SincronizadorDatos/ObtenerEsquema/true")
+    @GET("apicontrollerpruebas/api/SincronizadorDatos/ObtenerEsquema/true")
     suspend fun getDatabaseSchema(
         @Header("usuario") usuario: String
     ): Response<SchemaResponseDto>

@@ -18,6 +18,6 @@ interface LocalitiesApiService {
      *
      * @return Response containing LocalitiesResponseDto with locality information
      */
-    @GET("api/ParametrosFramework/ObtenerLocalidadesRecogidas")
+    @GET("apicontrollerpruebas/api/ParametrosFramework/ObtenerLocalidadesRecogidas")
     suspend fun getLocalities(): Response<LocalitiesResponseDto>
 }

@@ -25,7 +25,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -61,7 +60,7 @@ fun HomeScreen(
     onNavigateToTables: () -> Unit,
     onNavigateToLocalities: () -> Unit,
     onLogout: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -122,8 +121,7 @@ fun HomeScreen(
                         // Logout button
                         IconButton(
                             onClick = {
-                                viewModel.logout()
-                                onLogout()
+                                viewModel.logout(onLogout)
                             }
                         ) {
                             Icon(

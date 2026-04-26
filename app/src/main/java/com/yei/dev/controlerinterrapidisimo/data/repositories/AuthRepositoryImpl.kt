@@ -14,6 +14,7 @@ import com.yei.dev.controlerinterrapidisimo.domain.models.UserSession
 import com.yei.dev.controlerinterrapidisimo.domain.repositories.AuthRepository
 import com.yei.dev.controlerinterrapidisimo.domain.utils.cleanCredential
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
@@ -113,22 +114,21 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getUserSession(): Flow<Result<UserSession?>> = flow {
-        try {
+    override fun getUserSession(): Flow<Result<UserSession?>> = flow<Result<UserSession?>> {
             val userEntity = userDao.getUser()
             val userSession = userEntity?.let { userEntityToDomainConverter.convert(it) }
             emit(Result.Success(userSession))
-        } catch (e: Exception) {
-            emit(
-                Result.Error(
-                    AppError.DatabaseError(
-                        message = MESSAGE_FAILED_RETRIEVE_SESSION,
-                        cause = e,
-                    ),
+    }.catch { e ->
+        emit(
+            Result.Error(
+                AppError.DatabaseError(
+                    message = MESSAGE_FAILED_RETRIEVE_SESSION,
+                    cause = e,
                 ),
-            )
-        }
+            ),
+        )
     }
+
 
     override fun clearUserSession(): Flow<Result<Unit>> = flow {
         try {
