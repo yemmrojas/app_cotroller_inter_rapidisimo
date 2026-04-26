@@ -3,6 +3,7 @@ package com.yei.dev.controlerinterrapidisimo.domain.repositories
 import com.yei.dev.controlerinterrapidisimo.domain.models.Result
 import com.yei.dev.controlerinterrapidisimo.domain.models.SyncResult
 import com.yei.dev.controlerinterrapidisimo.domain.models.TableInfo
+import com.yei.dev.controlerinterrapidisimo.domain.models.TableSchema
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -13,7 +14,7 @@ import kotlinx.coroutines.flow.Flow
  * and provides access to table information and data.
  *
  * Business Purpose:
- * - Synchronizes database schema from remote service to local database
+ * - Fetches database schema from remote service
  * - Creates and updates tables dynamically based on remote schema definitions
  * - Preserves existing data during schema updates
  * - Provides access to table metadata and data for display purposes
@@ -21,16 +22,30 @@ import kotlinx.coroutines.flow.Flow
  */
 interface DataSyncRepository {
     /**
-     * Synchronizes the local database with the remote schema.
+     * Fetches the database schema from the remote Data Sync Service.
      *
-     * This method fetches the schema from the remote service, creates or updates
-     * tables in the local database, and returns statistics about the operation.
-     * Changes are performed within a transaction and rolled back on failure.
+     * This method retrieves the schema definitions for all tables that should
+     * exist in the local database. The schema includes table names and column
+     * definitions with type information.
      *
+     * @return Flow emitting Result with a list of TableSchema objects,
+     *         or an error if the fetch fails
+     */
+    fun fetchDatabaseSchema(): Flow<Result<List<TableSchema>>>
+
+    /**
+     * Synchronizes tables in the local database based on provided schemas.
+     *
+     * This method creates new tables and updates existing tables based on the
+     * provided schema definitions. Changes are performed within a transaction
+     * and rolled back on failure. Existing data is preserved when updating
+     * compatible table structures.
+     *
+     * @param schemas The list of table schemas to synchronize
      * @return Flow emitting Result with SyncResult containing sync statistics,
      *         or an error if synchronization fails
      */
-    fun syncDatabase(): Flow<Result<SyncResult>>
+    fun syncTables(schemas: List<TableSchema>): Flow<Result<SyncResult>>
 
     /**
      * Retrieves information about all tables in the local database.

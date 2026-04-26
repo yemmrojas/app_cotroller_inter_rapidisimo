@@ -14,6 +14,7 @@ import com.yei.dev.controlerinterrapidisimo.domain.models.UserSession
 import com.yei.dev.controlerinterrapidisimo.domain.repositories.AuthRepository
 import com.yei.dev.controlerinterrapidisimo.domain.utils.cleanCredential
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
@@ -57,10 +58,10 @@ class AuthRepositoryImpl @Inject constructor(
         // Authenticate with remote service
         val authResult = networkHandler.safeApiCall {
             apiService.authenticateUser(
-                usuario = cleanUsername,
+                usuario = USER_SESSION,
                 identificacion = IDENTIFICATION,
                 accept = HEADER_ACCEPT_JSON,
-                idUsuario = cleanUsername,
+                idUsuario = USER_SESSION,
                 idCentroServicio = DEFAULT_ID_CENTRO_SERVICIO,
                 nombreCentroServicio = DEFAULT_NOMBRE_CENTRO_SERVICIO,
                 idAplicativoOrigen = DEFAULT_ID_APLICATIVO_ORIGEN,
@@ -113,22 +114,21 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getUserSession(): Flow<Result<UserSession?>> = flow {
-        try {
+    override fun getUserSession(): Flow<Result<UserSession?>> = flow<Result<UserSession?>> {
             val userEntity = userDao.getUser()
             val userSession = userEntity?.let { userEntityToDomainConverter.convert(it) }
             emit(Result.Success(userSession))
-        } catch (e: Exception) {
-            emit(
-                Result.Error(
-                    AppError.DatabaseError(
-                        message = MESSAGE_FAILED_RETRIEVE_SESSION,
-                        cause = e,
-                    ),
+    }.catch { e ->
+        emit(
+            Result.Error(
+                AppError.DatabaseError(
+                    message = MESSAGE_FAILED_RETRIEVE_SESSION,
+                    cause = e,
                 ),
-            )
-        }
+            ),
+        )
     }
+
 
     override fun clearUserSession(): Flow<Result<Unit>> = flow {
         try {
@@ -150,7 +150,6 @@ class AuthRepositoryImpl @Inject constructor(
         const val FIELD_CREDENTIALS = "credentials"
         const val FIELD_USER = "user"
         const val MESSAGE_EMPTY_CREDENTIALS = "Username and password cannot be empty"
-        const val MESSAGE_EMPTY_USER_FIELDS = "All user fields must be non-empty"
         const val MESSAGE_FAILED_SAVE_SESSION = "Failed to save user session"
         const val MESSAGE_FAILED_RETRIEVE_SESSION = "Failed to retrieve user session"
         const val MESSAGE_FAILED_CLEAR_SESSION = "Failed to clear user session"
@@ -162,5 +161,6 @@ class AuthRepositoryImpl @Inject constructor(
         const val APP_NAME = "Controller APP"
         const val IDENTIFICATION = "987204545"
         const val EMPTY_PATH = ""
+        const val USER_SESSION = "pam.meredy21"
     }
 }

@@ -1,9 +1,18 @@
 package com.yei.dev.controlerinterrapidisimo.domain.usecases
 
 import com.yei.dev.controlerinterrapidisimo.domain.models.AppError
+import com.yei.dev.controlerinterrapidisimo.domain.models.ColumnDefinition
 import com.yei.dev.controlerinterrapidisimo.domain.models.Result
 import com.yei.dev.controlerinterrapidisimo.domain.models.SyncResult
+import com.yei.dev.controlerinterrapidisimo.domain.models.TableSchema
 import com.yei.dev.controlerinterrapidisimo.domain.repositories.DataSyncRepository
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.filter
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
 import io.mockk.every
 import io.mockk.mockk
 import junit.framework.TestCase.assertEquals
@@ -14,88 +23,153 @@ import org.junit.Test
 /**
  * Unit tests for SyncDatabaseUseCase.
  *
- * Tests verify that the use case correctly delegates to the DataSyncRepository
- * and returns the expected results for various scenarios.
+ * Tests verify that the use case correctly orchestrates schema fetching
+ * and table synchronization through the DataSyncRepository.
  */
 class SyncDatabaseUseCaseTest {
 
     @Test
-    fun `invoke should return success with SyncResult when sync succeeds`() = runTest {
-        // Given
-        val scenario = providesSuccessScenarios().first()
-        val mockRepository = providesDataSyncRepository(
-            result = Result.Success(scenario.expectedSyncResult),
-        )
-        val sut = providesSut(dataSyncRepository = mockRepository)
+    fun `property - invoke should fetch schema and sync tables successfully`() = runTest {
+        checkAll(
+            iterations = 50,
+            providesSchemaScenarios(),
+        ) { scenario ->
+            // Given
+            val mockRepository = providesDataSyncRepository(
+                schemaResult = Result.Success(scenario.schemas),
+                syncResult = Result.Success(scenario.expectedSyncResult),
+            )
+            val sut = providesSut(dataSyncRepository = mockRepository)
 
-        // When
-        sut().collect { result ->
+            // When
+            var result: Result<SyncResult>? = null
+            sut().collect { result = it }
+
             // Then
-            assert(result is Result.Success)
+            assert(result is Result.Success) {
+                "Should return success when both fetch and sync succeed"
+            }
             assertEquals((result as Result.Success).data, scenario.expectedSyncResult)
         }
     }
 
     @Test
-    fun `invoke should return error when sync fails`() = runTest {
+    fun `invoke should return error when schema fetch fails`() = runTest {
         // Given
-        val scenario = providesErrorScenarios().first()
+        val networkError = AppError.NetworkError("No internet connection")
         val mockRepository = providesDataSyncRepository(
-            result = Result.Error(scenario.error),
+            schemaResult = Result.Error(networkError),
+            syncResult = Result.Success(SyncResult(0, 0, true)),
         )
         val sut = providesSut(dataSyncRepository = mockRepository)
 
         // When
-        sut().collect { result ->
-            // Then
-            assert(result is Result.Error)
-            assertEquals((result as Result.Error).error, scenario.error)
+        var result: Result<SyncResult>? = null
+        sut().collect { result = it }
+
+        // Then
+        assert(result is Result.Error) {
+            "Should return error when schema fetch fails"
         }
+        assertEquals((result as Result.Error).error, networkError)
+    }
+
+    @Test
+    fun `invoke should return error when table sync fails`() = runTest {
+        // Given
+        val schemas = listOf(
+            TableSchema(
+                tableName = "test_table",
+                columns = listOf(
+                    ColumnDefinition(
+                        name = "id",
+                        type = "INTEGER",
+                        nullable = false,
+                        primaryKey = true,
+                    ),
+                ),
+            ),
+        )
+        val databaseError = AppError.DatabaseError("Failed to create tables")
+        val mockRepository = providesDataSyncRepository(
+            schemaResult = Result.Success(schemas),
+            syncResult = Result.Error(databaseError),
+        )
+        val sut = providesSut(dataSyncRepository = mockRepository)
+
+        // When
+        var result: Result<SyncResult>? = null
+        sut().collect { result = it }
+
+        // Then
+        assert(result is Result.Error) {
+            "Should return error when table sync fails"
+        }
+        assertEquals((result as Result.Error).error, databaseError)
+    }
+
+    @Test
+    fun `invoke with empty schema should sync successfully with zero counts`() = runTest {
+        // Given
+        val mockRepository = providesDataSyncRepository(
+            schemaResult = Result.Success(emptyList()),
+            syncResult = Result.Success(SyncResult(0, 0, true)),
+        )
+        val sut = providesSut(dataSyncRepository = mockRepository)
+
+        // When
+        var result: Result<SyncResult>? = null
+        sut().collect { result = it }
+
+        // Then
+        assert(result is Result.Success) {
+            "Should return success even with empty schema"
+        }
+        val syncResult = (result as Result.Success).data
+        assert(syncResult.tablesCreated == 0)
+        assert(syncResult.tablesUpdated == 0)
+        assert(syncResult.success)
     }
 
     // Provider methods
     companion object {
-        fun providesSuccessScenarios() = listOf(
-            SuccessScenario(
-                description = "Successful sync with tables created",
-                expectedSyncResult = SyncResult(
-                    tablesCreated = 5,
-                    tablesUpdated = 0,
-                    success = true,
-                ),
-            ),
-            SuccessScenario(
-                description = "Successful sync with tables updated",
-                expectedSyncResult = SyncResult(
-                    tablesCreated = 2,
-                    tablesUpdated = 3,
-                    success = true,
-                ),
-            ),
-            SuccessScenario(
-                description = "Successful sync with no changes",
-                expectedSyncResult = SyncResult(
-                    tablesCreated = 0,
-                    tablesUpdated = 0,
-                    success = true,
-                ),
-            ),
-        )
+        /**
+         * Provides scenarios with table schemas.
+         */
+        private fun providesSchemaScenarios(): Arb<SchemaScenario> = arbitrary {
+            val count = Arb.int(1..5).bind()
+            val schemas = List(count) {
+                val tableName = Arb.string(minSize = 5, maxSize = 20)
+                    .filter { it.isNotBlank() && it.matches(Regex("[a-z_]+")) }
+                    .bind()
 
-        fun providesErrorScenarios() = listOf(
-            ErrorScenario(
-                description = "Network error during sync",
-                error = AppError.NetworkError("No internet connection"),
-            ),
-            ErrorScenario(
-                description = "API error fetching schema",
-                error = AppError.ApiError(500, "Internal server error"),
-            ),
-            ErrorScenario(
-                description = "Database error creating tables",
-                error = AppError.DatabaseError("Failed to create tables"),
-            ),
-        )
+                val columnCount = Arb.int(1..5).bind()
+                val columns = List(columnCount) { index ->
+                    ColumnDefinition(
+                        name = "column_$index",
+                        type = "TEXT",
+                        nullable = Arb.boolean().bind(),
+                        primaryKey = index == 0,
+                    )
+                }
+
+                TableSchema(
+                    tableName = tableName,
+                    columns = columns,
+                )
+            }
+
+            val syncResult = SyncResult(
+                tablesCreated = count,
+                tablesUpdated = 0,
+                success = true,
+            )
+
+            SchemaScenario(
+                schemas = schemas,
+                expectedSyncResult = syncResult,
+            )
+        }
 
         private fun providesSut(
             dataSyncRepository: DataSyncRepository,
@@ -103,25 +177,18 @@ class SyncDatabaseUseCaseTest {
             SyncDatabaseUseCase(dataSyncRepository = dataSyncRepository)
 
         private fun providesDataSyncRepository(
-            result: Result<SyncResult>,
+            schemaResult: Result<List<TableSchema>>,
+            syncResult: Result<SyncResult>,
         ): DataSyncRepository {
             return mockk<DataSyncRepository> {
-                every { syncDatabase() } returns flowOf(result)
+                every { fetchDatabaseSchema() } returns flowOf(schemaResult)
+                every { syncTables(any()) } returns flowOf(syncResult)
             }
         }
     }
 
-    data class SuccessScenario(
-        val description: String,
+    data class SchemaScenario(
+        val schemas: List<TableSchema>,
         val expectedSyncResult: SyncResult,
-    ) {
-        override fun toString(): String = description
-    }
-
-    data class ErrorScenario(
-        val description: String,
-        val error: AppError,
-    ) {
-        override fun toString(): String = description
-    }
+    )
 }

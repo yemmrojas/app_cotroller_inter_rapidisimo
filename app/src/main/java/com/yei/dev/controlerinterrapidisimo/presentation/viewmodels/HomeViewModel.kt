@@ -100,14 +100,16 @@ class HomeViewModel @Inject constructor(
 
     /**
      * Logs out the current user.
+     *
+     * @param onLogoutSuccess Callback to execute when logout is successful
      */
-    fun logout() {
+    fun logout(onLogoutSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             logoutUseCase().collect { logoutResult ->
                 when (logoutResult) {
                     is Result.Success -> {
-                        // Logout successful, state will be handled by navigation
-                        // The screen should navigate to login
+                        // Logout successful, call the callback
+                        onLogoutSuccess()
                     }
 
                     is Result.Error -> {

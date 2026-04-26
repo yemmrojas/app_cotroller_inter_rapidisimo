@@ -90,9 +90,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
-    // Navigation 3
-    implementation(libs.androidx.navigation3.runtime)
-    implementation(libs.androidx.navigation3.ui)
+    // Navigation Compose
+    implementation(libs.androidx.navigation.compose)
 
     // Lifecycle
     implementation(libs.lifecycle.viewmodel.compose)
