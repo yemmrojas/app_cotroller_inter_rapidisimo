@@ -4,20 +4,21 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Data transfer object for localities API response.
+ * Type alias for localities API response.
+ * The API returns an array of localities directly: [{...}, {...}]
  */
-@Serializable
-data class LocalitiesResponseDto(
-    val localities: List<LocalityDto>
-)
+typealias LocalitiesResponseDto = List<LocalityDto>
 
 /**
  * Data transfer object for locality information.
+ * Maps Spanish field names from Interrapidisimo API to domain model.
  */
 @Serializable
 data class LocalityDto(
+    @SerialName("IdLocalidad")
+    val localityId: String,
     @SerialName("AbreviacionCiudad")
-    val cityAbbreviation: String,
+    val cityAbbreviation: String = "",
     @SerialName("NombreCompleto")
-    val fullName: String
+    val fullName: String = ""
 )

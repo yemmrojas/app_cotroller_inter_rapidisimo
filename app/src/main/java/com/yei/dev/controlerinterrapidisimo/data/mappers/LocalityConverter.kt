@@ -8,6 +8,7 @@ import com.yei.dev.controlerinterrapidisimo.domain.models.Locality
  */
 class LocalityConverter : Converter<LocalityDto, Locality> {
     override fun convert(input: LocalityDto): Locality = Locality(
+        localityId = input.localityId,
         cityAbbreviation = input.cityAbbreviation,
         fullName = input.fullName
     )

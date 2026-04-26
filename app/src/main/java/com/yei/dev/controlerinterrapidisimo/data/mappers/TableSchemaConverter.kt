@@ -14,6 +14,7 @@ class TableSchemaConverter @Inject constructor (
 ) : Converter<TableSchemaDto, TableSchema> {
     override fun convert(input: TableSchemaDto): TableSchema = TableSchema(
         tableName = input.tableName,
-        columns = columnDefinitionConverter.convertList(input.columns)
+        columns = columnDefinitionConverter.convertList(input.columns),
+        queryCreacion = input.queryCreacion
     )
 }

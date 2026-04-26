@@ -241,11 +241,11 @@ This implementation plan breaks down the Controller APP feature into discrete, i
     - Implement transaction rollback on failure
     - _Requirements: 3.1, 3.2, 3.3, 3.6_
 
-- [ ]* 10.2 Write property test for schema synchronization
+- [x] 10.2 Write property test for schema synchronization
   - **Property 7: Database Schema Synchronization Idempotence**
   - **Validates: Requirements 3.2, 3.5**
 
-- [ ]* 10.3 Write property test for data preservation
+- [x] 10.3 Write property test for data preservation
   - **Property 8: Table Data Preservation During Schema Updates**
   - **Validates: Requirements 3.3**
 

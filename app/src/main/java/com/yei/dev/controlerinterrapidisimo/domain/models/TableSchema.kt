@@ -5,10 +5,12 @@ package com.yei.dev.controlerinterrapidisimo.domain.models
  *
  * @param tableName The name of the table
  * @param columns The list of column definitions for this table
+ * @param queryCreacion Optional SQL CREATE TABLE statement from the API
  */
 data class TableSchema(
     val tableName: String,
-    val columns: List<ColumnDefinition>
+    val columns: List<ColumnDefinition>,
+    val queryCreacion: String = ""
 )
 
 /**

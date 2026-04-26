@@ -27,18 +27,44 @@ class DynamicTableDao(private val database: SupportSQLiteDatabase) {
     /**
      * Creates a new table with the specified columns.
      *
+     * Uses the SQL CREATE TABLE statement provided by the API (QueryCreacion)
+     * if available, otherwise generates SQL from column definitions.
+     *
      * @param tableName The name of the table to create
      * @param columns The list of column definitions
+     * @param querySql Optional SQL CREATE TABLE statement from API
+     * @return true if the table was created successfully, false otherwise
      */
-    fun createTable(tableName: String, columns: List<ColumnDefinition>) {
+    fun createTable(tableName: String, columns: List<ColumnDefinition>, querySql: String = ""): Boolean {
+        // If API provided a complete SQL statement, use it
+        if (querySql.isNotBlank()) {
+            try {
+                database.execSQL(querySql)
+                return true
+            } catch (e: Exception) {
+                // If API SQL fails, fall through to generate our own
+            }
+        }
+
+        // Cannot create table without columns
+        if (columns.isEmpty()) {
+            return false
+        }
+
+        // Generate SQL from column definitions
         val columnDefinitions = columns.joinToString(", ") { column ->
             val nullability = if (column.nullable) "" else "NOT NULL"
             val primaryKey = if (column.primaryKey) "PRIMARY KEY" else ""
             "${column.name} ${column.type} $nullability $primaryKey".trim()
         }
 
-        val createTableQuery = "CREATE TABLE IF NOT EXISTS $tableName ($columnDefinitions)"
-        database.execSQL(createTableQuery)
+        return try {
+            val createTableQuery = "CREATE TABLE IF NOT EXISTS $tableName ($columnDefinitions)"
+            database.execSQL(createTableQuery)
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     /**

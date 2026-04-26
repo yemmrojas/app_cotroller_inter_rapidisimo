@@ -49,7 +49,8 @@ class DataSyncRepositoryImplTest {
             providesSchemaScenarios(),
         ) { scenario ->
             // Given
-            val schemaDto = SchemaResponseDto(tables = scenario.tableDtos)
+            // SchemaResponseDto is now a List<TableSchemaDto> directly
+            val schemaDto: SchemaResponseDto = scenario.tableDtos
             val sut = providesSut(
                 networkHandler = providesNetworkHandler(Result.Success(schemaDto)),
                 database = providesAppDatabase(providesDynamicTableDao()),
@@ -106,7 +107,8 @@ class DataSyncRepositoryImplTest {
     @Test
     fun `fetchDatabaseSchema with empty schema should return empty list`() = runTest {
         // Given
-        val schemaDto = SchemaResponseDto(tables = emptyList())
+        // SchemaResponseDto is now a List<TableSchemaDto> directly
+        val schemaDto: SchemaResponseDto = emptyList()
         val sut = providesSut(
             networkHandler = providesNetworkHandler(Result.Success(schemaDto)),
             database = providesAppDatabase(providesDynamicTableDao()),
@@ -166,7 +168,7 @@ class DataSyncRepositoryImplTest {
 
             // Verify createTable was called for each table
             scenario.schemas.forEach { schema ->
-                verify { mockDao.createTable(schema.tableName, any()) }
+                verify { mockDao.createTable(schema.tableName, any(), any()) }
             }
         }
     }
@@ -280,6 +282,86 @@ class DataSyncRepositoryImplTest {
         }
         assert(syncResult.success) {
             "Sync should be successful"
+        }
+    }
+
+    @Test
+    fun `syncTables with failed table creation should return error`() = runTest {
+        // Given
+        val schema = TableSchema(
+            tableName = "test_table",
+            columns = emptyList(), // Empty columns will cause createTable to return false
+            queryCreacion = "", // No SQL provided
+        )
+        
+        val mockDao = mockk<DynamicTableDao>(relaxed = true).apply {
+            every { tableExists(any()) } returns false
+            every { createTable(any(), any(), any()) } returns false // Simulate creation failure
+        }
+        val mockDatabase = providesAppDatabase(mockDao)
+
+        val sut = providesSut(
+            networkHandler = providesNetworkHandler(Result.Success(mockk())),
+            database = mockDatabase,
+            dynamicTableDao = mockDao,
+        )
+
+        // When
+        var result: Result<SyncResult>? = null
+        sut.syncTables(listOf(schema)).collect { result = it }
+
+        // Then
+        assert(result is Result.Error) {
+            "Should return error when table creation fails"
+        }
+        val error = (result as Result.Error).error
+        assert(error is AppError.DatabaseError) {
+            "Should be DatabaseError"
+        }
+        val dbError = error as AppError.DatabaseError
+        assert(dbError.message.contains("Failed to create 1")) {
+            "Error message should indicate 1 table failed, got: ${dbError.message}"
+        }
+    }
+
+    @Test
+    fun `syncTables with partial failures should return error with correct counts`() = runTest {
+        // Given
+        val schemas = listOf(
+            TableSchema(tableName = "table1", columns = listOf(ColumnDefinition("id", "INTEGER", false, true))),
+            TableSchema(tableName = "table2", columns = emptyList()), // Will fail
+            TableSchema(tableName = "table3", columns = listOf(ColumnDefinition("id", "INTEGER", false, true))),
+        )
+        
+        val mockDao = mockk<DynamicTableDao>(relaxed = true).apply {
+            every { tableExists(any()) } returns false
+            every { createTable("table1", any(), any()) } returns true
+            every { createTable("table2", any(), any()) } returns false // Fails
+            every { createTable("table3", any(), any()) } returns true
+        }
+        val mockDatabase = providesAppDatabase(mockDao)
+
+        val sut = providesSut(
+            networkHandler = providesNetworkHandler(Result.Success(mockk())),
+            database = mockDatabase,
+            dynamicTableDao = mockDao,
+        )
+
+        // When
+        var result: Result<SyncResult>? = null
+        sut.syncTables(schemas).collect { result = it }
+
+        // Then
+        assert(result is Result.Error) {
+            "Should return error when any table creation fails"
+        }
+        val error = (result as Result.Error).error
+        assert(error is AppError.DatabaseError) {
+            "Should be DatabaseError"
+        }
+        val dbError = error as AppError.DatabaseError
+        assert(dbError.message.contains("Failed to create 1 of 3 tables")) {
+            "Error message should indicate 1 of 3 tables failed, got: ${dbError.message}"
         }
     }
 
@@ -627,7 +709,7 @@ class DataSyncRepositoryImplTest {
                     val tableName = firstArg<String>()
                     existingTables.contains(tableName)
                 }
-                every { createTable(any(), any()) } returns Unit
+                every { createTable(any(), any(), any()) } returns true
                 every { updateTableSchema(any(), any()) } returns Unit
             }
 
@@ -636,7 +718,7 @@ class DataSyncRepositoryImplTest {
          */
         private fun providesDynamicTableDaoWithError() = mockk<DynamicTableDao>().apply {
             every { tableExists(any()) } returns false
-            every { createTable(any(), any()) } throws RuntimeException("Database error")
+            every { createTable(any(), any(), any()) } throws RuntimeException("Database error")
         }
 
         /**

@@ -98,6 +98,7 @@ class LocalityConverterTest {
             LocalityDto(
                 cityAbbreviation = abbreviation,
                 fullName = fullName,
+                localityId = Arb.string(minSize = 1, maxSize = 10).bind()
             )
         }
 

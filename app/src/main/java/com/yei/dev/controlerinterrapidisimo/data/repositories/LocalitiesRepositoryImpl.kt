@@ -29,7 +29,8 @@ class LocalitiesRepositoryImpl @Inject constructor(
 
         when (result) {
             is Result.Success -> {
-                val localities = localityConverter.convertList(result.data.localities)
+                // result.data is now a List<LocalityDto> directly
+                val localities = localityConverter.convertList(result.data)
                 emit(Result.Success(localities))
             }
             is Result.Error -> emit(result)

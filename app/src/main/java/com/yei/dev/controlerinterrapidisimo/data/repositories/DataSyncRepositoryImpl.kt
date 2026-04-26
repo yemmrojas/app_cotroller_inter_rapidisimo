@@ -40,7 +40,8 @@ class DataSyncRepositoryImpl @Inject constructor(
         when (schemaResult) {
             is Result.Success -> {
                 try {
-                    val schemas = tableSchemaConverter.convertList(schemaResult.data.tables)
+                    // schemaResult.data is now a List<TableSchemaDto> directly
+                    val schemas = tableSchemaConverter.convertList(schemaResult.data)
                     emit(Result.Success(schemas))
                 } catch (e: Exception) {
                     emit(
@@ -71,6 +72,7 @@ class DataSyncRepositoryImpl @Inject constructor(
         try {
             var tablesCreated = 0
             var tablesUpdated = 0
+            var tablesFailed = 0
 
             // Use transaction for atomic operations
             withContext(Dispatchers.IO) {
@@ -85,23 +87,44 @@ class DataSyncRepositoryImpl @Inject constructor(
                             dynamicTableDao.updateTableSchema(schema.tableName, schema.columns)
                             tablesUpdated++
                         } else {
-                            // Create new table
-                            dynamicTableDao.createTable(schema.tableName, schema.columns)
-                            tablesCreated++
+                            // Create new table using API SQL if available
+                            val created = dynamicTableDao.createTable(
+                                schema.tableName,
+                                schema.columns,
+                                schema.queryCreacion
+                            )
+                            
+                            if (created) {
+                                tablesCreated++
+                            } else {
+                                tablesFailed++
+                            }
                         }
                     }
                 }
             }
 
-            emit(
-                Result.Success(
-                    SyncResult(
-                        tablesCreated = tablesCreated,
-                        tablesUpdated = tablesUpdated,
-                        success = true,
+            // If any tables failed to create, report error
+            if (tablesFailed > 0) {
+                emit(
+                    Result.Error(
+                        AppError.DatabaseError(
+                            message = "Failed to create $tablesFailed of ${schemas.size} tables during sync",
+                            cause = null,
+                        ),
                     ),
-                ),
-            )
+                )
+            } else {
+                emit(
+                    Result.Success(
+                        SyncResult(
+                            tablesCreated = tablesCreated,
+                            tablesUpdated = tablesUpdated,
+                            success = true,
+                        ),
+                    ),
+                )
+            }
         } catch (e: Exception) {
             emit(
                 Result.Error(

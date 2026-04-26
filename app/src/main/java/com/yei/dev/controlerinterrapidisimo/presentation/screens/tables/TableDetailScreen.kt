@@ -18,21 +18,16 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,6 +44,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yei.dev.controlerinterrapidisimo.R
 import com.yei.dev.controlerinterrapidisimo.domain.models.TablesState
+import com.yei.dev.controlerinterrapidisimo.presentation.components.LoadingController
+import com.yei.dev.controlerinterrapidisimo.presentation.components.ToolbarController
 import com.yei.dev.controlerinterrapidisimo.presentation.viewmodels.TablesViewModel
 
 /**
@@ -64,7 +61,7 @@ fun TableDetailScreen(
     tableName: String,
     viewModel: TablesViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -75,124 +72,49 @@ fun TableDetailScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = tableName,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black,
-                    navigationIconContentColor = Color.Black
-                )
+            ToolbarController(
+                onBackClick = onBackClick,
+                text = tableName,
             )
-        }
+        },
     ) { paddingValues ->
         Box(
             modifier = modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(Color.White)
+                .background(Color.White),
         ) {
             when (val currentState = state) {
                 is TablesState.Loading -> {
                     // Loading state
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            color = colorResource(R.color.orange),
-                            modifier = Modifier.size(48.dp)
-                        )
-                    }
+                    LoadingController()
                 }
+
                 is TablesState.TableData -> {
                     // Success state - show table data
                     if (currentState.data.isEmpty()) {
                         // Empty state
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.TableChart,
-                                    contentDescription = "Empty table",
-                                    tint = Color.Gray,
-                                    modifier = Modifier.size(64.dp)
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = "Table is empty",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color.Gray,
-                                    textAlign = TextAlign.Center
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "No data available in this table",
-                                    fontSize = 14.sp,
-                                    color = Color.Gray,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
+                        TableEmptyState()
                     } else {
                         // Table data display
                         TableDataView(
-                            tableName = currentState.tableName,
-                            data = currentState.data
+                            data = currentState.data,
                         )
                     }
                 }
+
                 is TablesState.TablesList -> {
                     // This state is handled by TablesScreen
                     // Should not reach here in TableDetailScreen
                 }
+
                 is TablesState.Error -> {
                     // Error state
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(32.dp)
-                        ) {
-                            Text(
-                                text = currentState.message,
-                                fontSize = 16.sp,
-                                color = Color.Red,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(
-                                onClick = { viewModel.loadTableData(tableName) },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = colorResource(R.color.orange)
-                                )
-                            ) {
-                                Text("Retry")
-                            }
-                        }
-                    }
+                    ErrorState(
+                        message = currentState.message,
+                        viewModel = viewModel,
+                        tableName = tableName,
+                    )
                 }
             }
         }
@@ -200,9 +122,82 @@ fun TableDetailScreen(
 }
 
 @Composable
+fun ErrorState(
+    message: String,
+    viewModel: TablesViewModel,
+    tableName: String = "",
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Error,
+                contentDescription = "Error",
+                tint = Color.Red,
+                modifier = Modifier.size(64.dp),
+            )
+            Text(
+                text = message,
+                fontSize = 16.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = { viewModel.loadTableData(tableName) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colorResource(R.color.orange),
+                ),
+            ) {
+                Text("Retry")
+            }
+        }
+    }
+}
+
+@Composable
+fun TableEmptyState() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.TableChart,
+                contentDescription = "Empty table",
+                tint = Color.Gray,
+                modifier = Modifier.size(64.dp),
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Table is empty",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Gray,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "No data available in this table",
+                fontSize = 14.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+@Composable
 private fun TableDataView(
-    tableName: String,
-    data: List<Map<String, Any?>>
+    data: List<Map<String, Any?>>,
 ) {
     // Get all unique column names from all rows to handle variable/sparse schemas
     val columns = data
@@ -213,33 +208,33 @@ private fun TableDataView(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(16.dp),
     ) {
         // Table info header
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = colorResource(R.color.gray_50)
+                containerColor = colorResource(R.color.gray_50),
             ),
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(8.dp),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
                     text = "Records: ${data.size}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color.Black
+                    color = Color.Black,
                 )
                 Text(
                     text = "Columns: ${columns.size}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color.Black
+                    color = Color.Black,
                 )
             }
         }
@@ -249,23 +244,23 @@ private fun TableDataView(
         // Scrollable table
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Header row
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = colorResource(R.color.orange).copy(alpha = 0.1f)
+                        containerColor = colorResource(R.color.orange).copy(alpha = 0.1f),
                     ),
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(rememberScrollState())
                             .padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         columns.forEach { column ->
                             Text(
@@ -273,7 +268,7 @@ private fun TableDataView(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.Black,
-                                modifier = Modifier.width(120.dp)
+                                modifier = Modifier.width(120.dp),
                             )
                         }
                     }
@@ -285,22 +280,22 @@ private fun TableDataView(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (index % 2 == 0) 
-                            Color.White 
-                        else 
-                            colorResource(R.color.gray_50)
+                        containerColor = if (index % 2 == 0)
+                            Color.White
+                        else
+                            colorResource(R.color.gray_50),
                     ),
                     shape = RoundedCornerShape(8.dp),
                     elevation = CardDefaults.cardElevation(
-                        defaultElevation = 1.dp
-                    )
+                        defaultElevation = 1.dp,
+                    ),
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(rememberScrollState())
                             .padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         columns.forEach { column ->
                             val value = row[column]
@@ -310,7 +305,7 @@ private fun TableDataView(
                                 color = if (value == null) Color.Gray else Color.Black,
                                 modifier = Modifier.width(120.dp),
                                 maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }

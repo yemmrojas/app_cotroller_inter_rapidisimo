@@ -38,9 +38,8 @@ class LocalitiesRepositoryImplTest {
             providesLocalitiesScenarios(),
         ) { scenario ->
             // Given
-            val localitiesDto = LocalitiesResponseDto(
-                localities = scenario.dtoList,
-            )
+            // LocalitiesResponseDto is now a List<LocalityDto> directly
+            val localitiesDto = scenario.dtoList
 
             val sut = providesSut(
                 networkHandler = providesNetworkHandler(Result.Success(localitiesDto)),
@@ -72,7 +71,8 @@ class LocalitiesRepositoryImplTest {
     @Test
     fun `fetchLocalities with empty list should return empty list`() = runTest {
         // Given
-        val localitiesDto = LocalitiesResponseDto(localities = emptyList())
+        // LocalitiesResponseDto is now a List<LocalityDto> directly
+        val localitiesDto = emptyList<LocalityDto>()
         val sut = providesSut(
             networkHandler = providesNetworkHandler(Result.Success(localitiesDto)),
         )
@@ -144,6 +144,9 @@ class LocalitiesRepositoryImplTest {
         private fun providesLocalitiesScenarios(): Arb<LocalitiesScenario> = arbitrary {
             val count = Arb.int(1..10).bind()
             val localities = List(count) {
+                val localityId = Arb.string(minSize = 8, maxSize = 8)
+                    .filter { it.isNotBlank() }
+                    .bind()
                 val abbreviation = Arb.string(minSize = 2, maxSize = 5)
                     .filter { it.isNotBlank() }
                     .bind()
@@ -152,6 +155,7 @@ class LocalitiesRepositoryImplTest {
                     .bind()
 
                 LocalityDto(
+                    localityId = localityId,
                     cityAbbreviation = abbreviation,
                     fullName = fullName,
                 )
@@ -192,6 +196,7 @@ class LocalitiesRepositoryImplTest {
             every { convert(any()) } answers {
                 val input = firstArg<LocalityDto>()
                 Locality(
+                    localityId = input.localityId,
                     cityAbbreviation = input.cityAbbreviation,
                     fullName = input.fullName,
                 )
@@ -200,6 +205,7 @@ class LocalitiesRepositoryImplTest {
                 val inputList = firstArg<List<LocalityDto>>()
                 inputList.map { dto ->
                     Locality(
+                        localityId = dto.localityId,
                         cityAbbreviation = dto.cityAbbreviation,
                         fullName = dto.fullName,
                     )
