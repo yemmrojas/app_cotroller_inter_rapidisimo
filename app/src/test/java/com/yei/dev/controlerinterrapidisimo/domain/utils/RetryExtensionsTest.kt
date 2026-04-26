@@ -272,7 +272,7 @@ class RetryExtensionsTest {
 
                 scenarios.forEach { scenario ->
                     var callCount = 0
-                    
+
                     val block: suspend () -> Result<String> = {
                         callCount++
                         if (callCount <= scenario.failureCount) {
@@ -293,7 +293,7 @@ class RetryExtensionsTest {
 
                     // Then
                     assertEquals("Failed for: ${scenario.description}", Result.Success("success"), result)
-                    
+
                     // Verify that we made the expected number of attempts
                     // This validates that retries are happening with the correct logic
                     assertEquals(
@@ -301,7 +301,7 @@ class RetryExtensionsTest {
                         scenario.failureCount + 1,
                         callCount,
                     )
-                    
+
                     // Verify that the function respects maxRetries
                     assertTrue(
                         "Failed for: ${scenario.description} - exceeded max retries",
@@ -358,11 +358,11 @@ class RetryExtensionsTest {
             try {
                 // Test the delay calculation logic directly
                 // delay = initialDelay * (factor ^ attemptNumber), capped at maxDelay
-                
+
                 val initialDelay = 50L
                 val factor = 2.0
                 val maxDelay = 1000L
-                
+
                 // Calculate expected delays for each attempt
                 val expectedDelays = listOf(
                     (initialDelay * Math.pow(factor, 0.0)).toLong().coerceAtMost(maxDelay), // 50ms
@@ -370,15 +370,15 @@ class RetryExtensionsTest {
                     (initialDelay * Math.pow(factor, 2.0)).toLong().coerceAtMost(maxDelay), // 200ms
                     (initialDelay * Math.pow(factor, 3.0)).toLong().coerceAtMost(maxDelay), // 400ms
                 )
-                
+
                 // Verify exponential growth
                 for (i in 1 until expectedDelays.size) {
                     assertTrue(
-                        "Delay should increase exponentially: ${expectedDelays[i-1]} -> ${expectedDelays[i]}",
-                        expectedDelays[i] >= expectedDelays[i-1],
+                        "Delay should increase exponentially: ${expectedDelays[i - 1]} -> ${expectedDelays[i]}",
+                        expectedDelays[i] >= expectedDelays[i - 1],
                     )
                 }
-                
+
                 // Verify capping at maxDelay
                 assertTrue(
                     "All delays should be <= maxDelay",

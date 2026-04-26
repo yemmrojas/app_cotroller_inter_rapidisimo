@@ -1,14 +1,13 @@
 package com.yei.dev.controlerinterrapidisimo.presentation.navigation
 
-import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 /**
  * Sealed class defining all navigation routes in the application.
- * Each route is a serializable data class or object that implements NavKey for Navigation 3.
+ * Each route is a serializable data class or object for Navigation Compose.
  */
 @Serializable
-sealed class Routes : NavKey {
+sealed class Routes {
     
     /**
      * Splash screen route - initial screen that checks version and session.
