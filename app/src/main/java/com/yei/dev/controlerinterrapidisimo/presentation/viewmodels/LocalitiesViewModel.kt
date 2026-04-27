@@ -23,7 +23,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class LocalitiesViewModel @Inject constructor(
-    private val getLocalitiesUseCase: GetLocalitiesUseCase
+    private val getLocalitiesUseCase: GetLocalitiesUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow<LocalitiesState>(LocalitiesState.Loading)
     val state: StateFlow<LocalitiesState> = _state.asStateFlow()
@@ -39,15 +39,12 @@ class LocalitiesViewModel @Inject constructor(
                 when (localitiesResult) {
                     is Result.Success -> {
                         val localities = localitiesResult.data
-                        if (localities.isNotEmpty()) {
-                            _state.value = LocalitiesState.Success(localities)
-                        } else {
-                            _state.value = LocalitiesState.Error("No localities available")
-                        }
+                        _state.value = LocalitiesState.Success(localities)
                     }
+
                     is Result.Error -> {
                         _state.value = LocalitiesState.Error(
-                            "Failed to load localities: ${formatError(localitiesResult.error)}"
+                            "Failed to load localities: ${formatError(localitiesResult.error)}",
                         )
                     }
                 }
