@@ -26,7 +26,7 @@ import javax.inject.Inject
 @HiltViewModel
 class TablesViewModel @Inject constructor(
     private val getTablesUseCase: GetTablesUseCase,
-    private val getTableDataUseCase: GetTableDataUseCase
+    private val getTableDataUseCase: GetTableDataUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow<TablesState>(TablesState.Loading)
     val state: StateFlow<TablesState> = _state.asStateFlow()
@@ -42,15 +42,12 @@ class TablesViewModel @Inject constructor(
                 when (tablesResult) {
                     is Result.Success -> {
                         val tables = tablesResult.data
-                        if (tables.isNotEmpty()) {
-                            _state.value = TablesState.TablesList(tables)
-                        } else {
-                            _state.value = TablesState.Error("No tables available")
-                        }
+                        _state.value = TablesState.TablesList(tables)
                     }
+
                     is Result.Error -> {
                         _state.value = TablesState.Error(
-                            "Failed to load tables: ${tablesResult.error}"
+                            "Failed to load tables: ${tablesResult.error}",
                         )
                     }
                 }
@@ -71,15 +68,11 @@ class TablesViewModel @Inject constructor(
                 when (tableDataResult) {
                     is Result.Success -> {
                         val tableData = tableDataResult.data
-                        if (tableData.isNotEmpty()) {
-                            _state.value = TablesState.TableData(tableName, tableData)
-                        } else {
-                            _state.value = TablesState.Error("Table '$tableName' is empty")
-                        }
+                        _state.value = TablesState.TableData(tableName, tableData)
                     }
                     is Result.Error -> {
                         _state.value = TablesState.Error(
-                            "Failed to load table data: ${tableDataResult.error}"
+                            "Failed to load table data: ${tableDataResult.error}",
                         )
                     }
                 }
